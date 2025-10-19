@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Car, Calculator, GraduationCap, Gift, Calendar, Home, ChevronRight, Sparkles } from 'lucide-react';
+import { Car, Calculator, GraduationCap, Gift, Calendar, Home, ChevronRight, Sparkles, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
+import { useAuth } from '../contexts/AuthContext';
 import QuestionnaireFlow from './QuestionnaireFlow';
 import VehicleRecommendations from './VehicleRecommendations';
 import FinancingCalculator from './FinancingCalculator';
@@ -34,6 +36,8 @@ export type UserProfile = {
 type Section = 'home' | 'questionnaire' | 'recommendations' | 'calculator' | 'showroom' | 'education' | 'lease-end' | 'incentives' | 'appointment' | 'blog';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [currentSection, setCurrentSection] = useState<Section>('home');
   const [userProfile, setUserProfile] = useState<UserProfile>({
     lifestyle: {
@@ -102,6 +106,23 @@ export default function Dashboard() {
                 </Button>
               ))}
             </nav>
+
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-600">
+                {user?.user_metadata?.name || user?.email}
+              </div>
+              <Button 
+                variant="outline"
+                onClick={async () => {
+                  await signOut();
+                  navigate('/');
+                }}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
+            </div>
 
             <Button 
               className="md:hidden"
