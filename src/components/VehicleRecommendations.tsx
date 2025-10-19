@@ -1,387 +1,539 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Car, TrendingUp, Zap, DollarSign, Users, Gauge, Award, ChevronRight, Heart, Share2 } from 'lucide-react';
+import { Car, Zap, ChevronDown, Heart, Share2, Users, RefreshCw, Calculator } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
-import type { UserProfile } from '../App';
+import { Slider } from './ui/slider';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { localVehicles } from '../data/vehicleData';
+// Local SelectedVehicle type (matches App.SelectedVehicle shape)
+type SelectedVehicle = {
+  model: string;
+  trim: string;
+  year: number;
+  msrp: number;
+  mpg_city: number;
+  mpg_highway: number;
+};
+
+type UserProfile = {
+  lifestyle: {
+    dailyCommute: number;
+    vehicleType: 'sedan' | 'suv' | 'truck' | 'van' | '';
+    powerTrain: 'electric' | 'hybrid' | 'gas' | '';
+  };
+  financial: {
+    targetPayment: number;
+    downPayment: number;
+    creditScore: string;
+  };
+  completed: boolean;
+};
 
 type Props = {
   userProfile: UserProfile;
   onScheduleAppointment: () => void;
+  onCalculatePayments: (vehicle: SelectedVehicle) => void;
 };
 
-type Vehicle = {
+type VehicleRecommendation = {
   id: string;
-  name: string;
-  type: 'sedan' | 'suv';
-  powerTrain: 'electric' | 'hybrid' | 'gas';
+  model: string;
+  year: number;
+  trim: string;
+  category: string;
+  powertrain: string;
   image: string;
   msrp: number;
+  mpg_city: number;
+  mpg_highway: number;
   leasePrice: number;
   financePrice: number;
-  mpg: string;
-  range?: string;
-  seating: number;
   resaleValue: number;
   matchScore: number;
   features: string[];
   incentives: string[];
 };
 
-export default function VehicleRecommendations({ userProfile, onScheduleAppointment }: Props) {
+export default function VehicleRecommendations({ userProfile, onCalculatePayments }: Props) {
   const [viewMode, setViewMode] = useState<'lease' | 'finance'>('lease');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [adjustedBudget, setAdjustedBudget] = useState(userProfile.financial.targetPayment);
+  const originalBudget = userProfile.financial.targetPayment;
 
-  const vehicles: Vehicle[] = [
-    {
-      id: 'camry-hybrid',
-      name: 'Toyota Camry Hybrid',
-      type: 'sedan',
-      powerTrain: 'hybrid',
-      image: 'https://images.unsplash.com/photo-1648197323414-4255ea82d86b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b3lvdGElMjBzZWRhbiUyMGNhcnxlbnwxfHx8fDE3NjA4MjQ4NzF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      msrp: 29980,
-      leasePrice: 349,
-      financePrice: 485,
-      mpg: '52 city / 50 hwy',
-      seating: 5,
-      resaleValue: 68,
-      matchScore: 95,
-      features: ['Apple CarPlay', 'Safety Sense 3.0', 'Adaptive Cruise Control', 'Lane Keeping Assist'],
-      incentives: ['$1,500 Loyalty Bonus', '$500 College Grad Program'],
-    },
-    {
-      id: 'rav4-hybrid',
-      name: 'Toyota RAV4 Hybrid',
-      type: 'suv',
-      powerTrain: 'hybrid',
-      image: 'https://images.unsplash.com/photo-1707726149138-879308167d60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b3lvdGElMjBzdXYlMjBtb2Rlcm58ZW58MXx8fHwxNzYwODI0ODcxfDA&ixlib=rb-4.1.0&q=80&w=1080',
-      msrp: 34580,
-      leasePrice: 429,
-      financePrice: 575,
-      mpg: '41 city / 38 hwy',
-      seating: 5,
-      resaleValue: 72,
-      matchScore: 92,
-      features: ['AWD Standard', 'Premium Audio', 'Panoramic Sunroof', 'Power Liftgate'],
-      incentives: ['$2,000 Hybrid Incentive', '$500 Loyalty Bonus'],
-    },
-    {
-      id: 'bz4x',
-      name: 'Toyota bZ4X',
-      type: 'suv',
-      powerTrain: 'electric',
-      image: 'https://images.unsplash.com/photo-1593941707874-ef25b8b4a92b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJpYyUyMGNhciUyMGNoYXJnaW5nfGVufDF8fHx8MTc2MDc4NjA5Nnww&ixlib=rb-4.1.0&q=80&w=1080',
-      msrp: 43215,
-      leasePrice: 499,
-      financePrice: 695,
-      mpg: 'N/A (Electric)',
-      range: '252 miles',
-      seating: 5,
-      resaleValue: 65,
-      matchScore: 88,
-      features: ['Fast Charging', 'Heat Pump', 'Solar Roof Panel', 'One Motion Grip'],
-      incentives: ['$7,500 Federal Tax Credit', '$2,000 State Rebate'],
-    },
-    {
-      id: 'corolla-hybrid',
-      name: 'Toyota Corolla Hybrid',
-      type: 'sedan',
-      powerTrain: 'hybrid',
-      image: 'https://images.unsplash.com/photo-1648197323414-4255ea82d86b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b3lvdGElMjBzZWRhbiUyMGNhcnxlbnwxfHx8fDE3NjA4MjQ4NzF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      msrp: 25150,
-      leasePrice: 289,
-      financePrice: 405,
-      mpg: '53 city / 52 hwy',
-      seating: 5,
-      resaleValue: 70,
-      matchScore: 90,
-      features: ['LED Headlights', 'Smart Key', '8-inch Touchscreen', 'Toyota Safety Sense 2.5'],
-      incentives: ['$1,000 College Grad Program', '$750 Military Rebate'],
-    },
-  ];
+  // Credit score to APR
+  const parseCreditScoreRate = (score: string) => {
+    const s = (score || '').toLowerCase();
+    if (s.includes('excellent')) return 0.04;
+    if (s.includes('good')) return 0.06;
+    if (s.includes('fair')) return 0.09;
+    if (s.includes('poor')) return 0.12;
+    return 0.07;
+  };
 
-  // Filter vehicles based on user preferences
+  // Finance calculation
+  const calcFinanceMonthly = (msrp: number, downPayment: number, annualRate: number, months = 60) => {
+    const principal = Math.max(0, msrp - (downPayment || 0));
+    const monthlyRate = annualRate / 12;
+    if (monthlyRate === 0) return Math.round(principal / months);
+    const monthly = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+    return Math.round(monthly);
+  };
+
+  // Lease calculation
+  const calcLeaseMonthly = (msrp: number, downPayment: number, annualRate: number, months = 36, residualPercent = 0.55) => {
+    const capCost = Math.max(0, msrp - (downPayment || 0));
+    const residual = msrp * residualPercent;
+    const moneyFactor = annualRate / 2400;
+    const depreciation = (capCost - residual) / months;
+    const financeCharge = (capCost + residual) * moneyFactor;
+    return Math.round(depreciation + financeCharge);
+  };
+
+  // Resale value calculation
+  const computeResaleValue = (msrp: number, mpg: number, powerTrain: string) => {
+    let base = 45;
+    const msrpPenalty = (msrp / 1000) * 0.5;
+    const mpgBonus = mpg * 0.2;
+
+    // Hybrids and electrics tend to have better resale
+    if (powerTrain === 'hybrid') base += 5;
+    if (powerTrain === 'electric') base += 8;
+
+    const value = base - msrpPenalty + mpgBonus;
+    return Math.round(Math.max(15, Math.min(75, value)));
+  };
+
+  // Generate vehicle recommendations from database
+  const generateRecommendations = (): VehicleRecommendation[] => {
+    const recommendations: VehicleRecommendation[] = [];
+    const annualRate = parseCreditScoreRate(userProfile.financial.creditScore);
+
+    localVehicles.forEach((vehicle) => {
+      vehicle.trims.forEach((trim) => {
+        // Calculate monthly payments
+        const financePrice = calcFinanceMonthly(
+          trim.msrp,
+          userProfile.financial.downPayment || 0,
+          annualRate,
+          60
+        );
+        const leasePrice = calcLeaseMonthly(
+          trim.msrp,
+          userProfile.financial.downPayment || 0,
+          annualRate,
+          36,
+          0.55
+        );
+
+        // Calculate average MPG
+        const avgMpg = (trim.mpg_city + trim.mpg_highway) / 2;
+
+        // Determine powertrain (default to 'gas' if not specified)
+        const powertrain = trim.powertrain || 'gas';
+
+        // Calculate resale value
+        const resaleValue = computeResaleValue(trim.msrp, avgMpg, powertrain);
+
+        // Generate features based on vehicle characteristics
+        const features: string[] = [];
+        if (powertrain === 'hybrid') features.push('Hybrid Engine');
+        if (powertrain === 'electric') features.push('Zero Emissions');
+        if (avgMpg > 40) features.push('Excellent MPG');
+        if (vehicle.category === 'suv') features.push('All-Wheel Drive');
+        if (vehicle.category === 'truck') features.push('Towing Capable');
+
+        // Generate incentives
+        const incentives: string[] = [];
+        if (powertrain === 'electric') incentives.push('$7,500 Federal Tax Credit');
+        if (powertrain === 'hybrid') incentives.push('State Rebate Eligible');
+
+        recommendations.push({
+          id: `${vehicle.id}-${trim.name}`,
+          model: vehicle.model,
+          year: vehicle.year,
+          trim: trim.name,
+          category: vehicle.category,
+          powertrain,
+          image: vehicle.image_url,
+          msrp: trim.msrp,
+          mpg_city: trim.mpg_city,
+          mpg_highway: trim.mpg_highway,
+          leasePrice,
+          financePrice,
+          resaleValue,
+          matchScore: 0,
+          features,
+          incentives,
+        });
+      });
+    });
+
+    return recommendations;
+  };
+
+  // Generate all recommendations
+  const allRecommendations = generateRecommendations();
+
+  // Score vehicle based on user preferences
+  const scoreVehicle = (veh: VehicleRecommendation) => {
+    let score = 0;
+
+    // 1. Vehicle Category Match (40 points) - HIGHEST PRIORITY
+    if (userProfile.lifestyle.vehicleType && userProfile.lifestyle.vehicleType === veh.category) {
+      score += 40;
+    }
+
+    // 2. Powertrain Match (30 points) - SECOND PRIORITY
+    if (userProfile.lifestyle.powerTrain && userProfile.lifestyle.powerTrain === veh.powertrain) {
+      score += 30;
+    }
+
+    // 3. Monthly Payment Affordability (20 points) - CRITICAL FOR BUDGET
+    const monthly = viewMode === 'lease' ? veh.leasePrice : veh.financePrice;
+    const targetPayment = adjustedBudget;
+
+    if (monthly <= targetPayment) {
+      // Perfect - within budget
+      score += 20;
+    } else if (monthly <= targetPayment * 1.1) {
+      // Slightly over budget (within 10%)
+      score += 15;
+    } else if (monthly <= targetPayment * 1.2) {
+      // Moderately over budget (within 20%)
+      score += 10;
+    } else if (monthly <= targetPayment * 1.3) {
+      // Over budget but possibly manageable
+      score += 5;
+    }
+    // No points if more than 30% over budget
+
+    // 4. Fuel Efficiency for Commute (7 points)
+    const commuteMonthly = userProfile.lifestyle.dailyCommute * 22; // ~22 working days
+    const avgMpg = (veh.mpg_city + veh.mpg_highway) / 2;
+    const fuelValue = (avgMpg / 100) * Math.min(commuteMonthly / 100, 10);
+    score += Math.min(7, fuelValue);
+
+    // 5. Resale Value (3 points)
+    score += (veh.resaleValue / 100) * 3;
+
+    return Math.round(Math.max(0, Math.min(100, score)));
+  };
+
+  // Get recommended vehicles with filtering
   const getRecommendedVehicles = () => {
-    return vehicles
+    const processed = allRecommendations.map((veh) => ({ ...veh, matchScore: scoreVehicle(veh) }));
+
+    return processed
       .filter((v) => {
-        if (userProfile.lifestyle.vehicleType && v.type !== userProfile.lifestyle.vehicleType) {
+        // Get the monthly payment based on current view mode
+        const monthly = viewMode === 'lease' ? v.leasePrice : v.financePrice;
+
+        // STRICT FILTER: Only show vehicles within or equal to budget
+        if (monthly > adjustedBudget) {
           return false;
         }
-        if (userProfile.lifestyle.powerTrain && v.powerTrain !== userProfile.lifestyle.powerTrain) {
+
+        // Filter by vehicle category if specified
+        if (userProfile.lifestyle.vehicleType && v.category !== userProfile.lifestyle.vehicleType) {
           return false;
         }
-        const price = viewMode === 'lease' ? v.leasePrice : v.financePrice;
-        if (price > userProfile.financial.targetPayment + 100) {
+
+        // Filter by powertrain if specified
+        if (userProfile.lifestyle.powerTrain && v.powertrain !== userProfile.lifestyle.powerTrain) {
           return false;
         }
+
         return true;
       })
-      .sort((a, b) => b.matchScore - a.matchScore);
+      .sort((a, b) => {
+        // Sort by match score (highest first)
+        if (b.matchScore !== a.matchScore) {
+          return b.matchScore - a.matchScore;
+        }
+
+        // If same score, sort by monthly payment (lowest first)
+        const monthlyA = viewMode === 'lease' ? a.leasePrice : a.financePrice;
+        const monthlyB = viewMode === 'lease' ? b.leasePrice : b.financePrice;
+        return monthlyA - monthlyB;
+      });
   };
 
   const recommendedVehicles = getRecommendedVehicles();
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((fav) => fav !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
     );
   };
 
-  const calculateTotalCost = (vehicle: Vehicle, mode: 'lease' | 'finance') => {
-    if (mode === 'lease') {
-      return vehicle.leasePrice * 36; // 3 year lease
-    } else {
-      return vehicle.financePrice * 60; // 5 year finance
-    }
-  };
+  // Calculate affordability stats
+  const affordableCount = recommendedVehicles.length;
+  const totalVehiclesInCategory = allRecommendations.filter(v => {
+    if (userProfile.lifestyle.vehicleType && v.category !== userProfile.lifestyle.vehicleType) return false;
+    if (userProfile.lifestyle.powerTrain && v.powertrain !== userProfile.lifestyle.powerTrain) return false;
+    return true;
+  }).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h2 className="text-gray-900 mb-2">Your Personalized Matches</h2>
+        <p className="text-gray-600">
+          Based on your preferences, we found {affordableCount} vehicle{affordableCount !== 1 ? 's' : ''} within your budget
+        </p>
+      </motion.div>
+
+      {/* Stats Overview */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200"
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
       >
-        <div className="flex items-start justify-between mb-6">
+        <Card className="p-4 border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+              <Car className="w-5 h-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Available Options</p>
+              <p className="text-2xl text-gray-900">{affordableCount}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Budget Status</p>
+              <p className="text-2xl text-gray-900">${adjustedBudget}/mo</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Heart className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Saved Favorites</p>
+              <p className="text-2xl text-gray-900">{favorites.length}</p>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Budget Adjustment Slider */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200"
+      >
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-gray-900 mb-2">Your Personalized Matches</h2>
-            <p className="text-gray-600">
-              Based on your preferences, we found {recommendedVehicles.length} vehicle{recommendedVehicles.length !== 1 ? 's' : ''} perfect for you
+            <h3 className="text-gray-900 mb-1">Adjust Your Budget</h3>
+            <p className="text-sm text-gray-600">
+              See how changing your budget affects available options
             </p>
           </div>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            {recommendedVehicles.length} Matches
-          </Badge>
+          {adjustedBudget !== originalBudget && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAdjustedBudget(originalBudget)}
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Reset
+            </Button>
+          )}
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-xs text-gray-600 mb-1">Daily Commute</div>
-            <div className="text-gray-900">{userProfile.lifestyle.dailyCommute} mi/day</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-xs text-gray-600 mb-1">Budget</div>
-            <div className="text-gray-900">${userProfile.financial.targetPayment}/mo</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-xs text-gray-600 mb-1">Passengers</div>
-            <div className="text-gray-900">{userProfile.lifestyle.passengers} people</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-xs text-gray-600 mb-1">Preference</div>
-            <div className="text-gray-900 capitalize">{userProfile.lifestyle.powerTrain || 'Any'}</div>
+        <div className="space-y-4">
+          <Slider
+            value={[adjustedBudget]}
+            onValueChange={([value]) => setAdjustedBudget(value)}
+            max={2000}
+            min={200}
+            step={50}
+            className="w-full"
+          />
+
+          <div className="text-center">
+            <div className="text-3xl text-red-600">${adjustedBudget}</div>
+            <div className="text-sm text-gray-600">per month</div>
           </div>
         </div>
       </motion.div>
 
       {/* Lease vs Finance Toggle */}
-      <div className="flex items-center justify-between">
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'lease' | 'finance')} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex justify-center"
+      >
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'lease' | 'finance')} className="w-full max-w-md">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="lease">Lease</TabsTrigger>
             <TabsTrigger value="finance">Finance</TabsTrigger>
           </TabsList>
         </Tabs>
-      </div>
+      </motion.div>
 
-      {/* Vehicle Cards */}
+      {/* Vehicles Grid */}
       <div className="grid md:grid-cols-2 gap-6">
-        {recommendedVehicles.map((vehicle, index) => (
+        {recommendedVehicles.length === 0 ? (
           <motion.div
-            key={vehicle.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="col-span-2 text-center py-12 bg-white rounded-2xl border border-gray-200"
           >
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              {/* Match Score Badge */}
-              {vehicle.matchScore >= 90 && (
-                <div className="absolute top-4 left-4 z-10">
-                  <Badge className="bg-green-600 text-white">
-                    <Award className="w-3 h-3 mr-1" />
-                    {vehicle.matchScore}% Match
-                  </Badge>
-                </div>
-              )}
-
-              {/* Favorite Button */}
-              <button
-                onClick={() => toggleFavorite(vehicle.id)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-              >
-                <Heart
-                  className={`w-5 h-5 ${
-                    favorites.includes(vehicle.id) ? 'fill-red-600 text-red-600' : 'text-gray-400'
-                  }`}
-                />
-              </button>
-
-              {/* Vehicle Image */}
-              <div className="relative h-56 bg-gray-100 overflow-hidden">
-                <ImageWithFallback
-                  src={vehicle.image}
-                  alt={vehicle.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="p-6">
-                {/* Vehicle Name & Type */}
-                <div className="mb-4">
-                  <h3 className="text-gray-900 mb-2">{vehicle.name}</h3>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="capitalize">
-                      {vehicle.type}
-                    </Badge>
-                    <Badge variant="outline" className="capitalize">
-                      {vehicle.powerTrain}
-                    </Badge>
-                    {vehicle.range && (
-                      <Badge variant="outline">
-                        <Zap className="w-3 h-3 mr-1" />
-                        {vehicle.range}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Pricing */}
-                <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 mb-4">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-3xl text-red-600">
-                      ${viewMode === 'lease' ? vehicle.leasePrice : vehicle.financePrice}
-                    </span>
-                    <span className="text-gray-600">/month</span>
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {viewMode === 'lease' ? '36-month lease' : '60-month financing'} • MSRP ${vehicle.msrp.toLocaleString()}
-                  </div>
-                </div>
-
-                {/* Key Specs */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-600 mb-1">MPG</div>
-                    <div className="text-sm text-gray-900">{vehicle.mpg.split('/')[0]}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-600 mb-1">Seats</div>
-                    <div className="text-sm text-gray-900">{vehicle.seating}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-600 mb-1">Resale</div>
-                    <div className="text-sm text-gray-900">{vehicle.resaleValue}%</div>
-                  </div>
-                </div>
-
-                {/* Resale Value Bar */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600">Predicted 3-Year Resale Value</span>
-                    <span className="text-xs text-green-700">{vehicle.resaleValue}%</span>
-                  </div>
-                  <Progress value={vehicle.resaleValue} className="h-2" />
-                </div>
-
-                {/* Features */}
-                <div className="mb-4">
-                  <div className="text-xs text-gray-600 mb-2">Key Features</div>
-                  <div className="flex flex-wrap gap-1">
-                    {vehicle.features.slice(0, 3).map((feature) => (
-                      <Badge key={feature} variant="secondary" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Incentives */}
-                {vehicle.incentives.length > 0 && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                    <div className="text-xs text-green-800 mb-1">Available Incentives</div>
-                    {vehicle.incentives.map((incentive) => (
-                      <div key={incentive} className="text-xs text-green-700">
-                        • {incentive}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <Button onClick={onScheduleAppointment} className="flex-1 gap-2">
-                    Schedule Test Drive
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" size="icon">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
+            <Car className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-gray-900 mb-2">No vehicles match your criteria</h3>
+            <p className="text-gray-600 mb-4">
+              Try adjusting your budget or preferences to see more options
+            </p>
+            <Button onClick={() => setAdjustedBudget(adjustedBudget + 100)}>
+              Increase Budget
+            </Button>
           </motion.div>
-        ))}
+        ) : (
+          recommendedVehicles.map((vehicle, index) => (
+            <motion.div
+              key={vehicle.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * index }}
+            >
+              <Card className="overflow-hidden border-gray-200 hover:shadow-lg transition-shadow">
+                {/* Vehicle Image */}
+                <div className="relative h-48 bg-gray-100">
+                  <ImageWithFallback
+                    src={vehicle.image}
+                    alt={`${vehicle.model} ${vehicle.trim}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <Badge className="bg-white text-gray-900 hover:bg-gray-50">
+                      {vehicle.matchScore}% Match
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`bg-white hover:bg-gray-50 ${favorites.includes(vehicle.id) ? 'text-red-600' : 'text-gray-600'}`}
+                      onClick={() => toggleFavorite(vehicle.id)}
+                    >
+                      <Heart className={`w-4 h-4 ${favorites.includes(vehicle.id) ? 'fill-current' : ''}`} />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Vehicle Details */}
+                <div className="p-6 space-y-4">
+                  <div>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="text-gray-900">{vehicle.year} {vehicle.model}</h3>
+                        <p className="text-sm text-gray-600">{vehicle.trim}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl text-red-600">
+                          ${viewMode === 'lease' ? vehicle.leasePrice : vehicle.financePrice}/mo
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {viewMode === 'lease' ? '36-month lease' : '60-month loan'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {vehicle.powertrain}
+                      </Badge>
+                      <Badge variant="outline">
+                        {vehicle.mpg_city}/{vehicle.mpg_highway} MPG
+                      </Badge>
+                      <Badge variant="outline" className="capitalize">
+                        {vehicle.category}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  {vehicle.features.length > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Key Features:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {vehicle.features.map((feature, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                          >
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Incentives */}
+                  {vehicle.incentives.length > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm text-green-800">
+                        💰 {vehicle.incentives.join(' • ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Resale Value */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">Resale Value</span>
+                      <span className="text-gray-900">{vehicle.resaleValue}%</span>
+                    </div>
+                    <Progress value={vehicle.resaleValue} className="h-2" />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="card-content">
+                    <Button
+                      onClick={() => onCalculatePayments({
+                        model: vehicle.model,
+                        trim: vehicle.trim,
+                        year: vehicle.year,
+                        msrp: vehicle.msrp,
+                        mpg_city: vehicle.mpg_city,
+                        mpg_highway: vehicle.mpg_highway,
+                      })}
+                      className="flex-1 gap-2 bg-red-600 text-white hover:bg-red-700 hover:text-white"
+                    >
+                      <Calculator className="w-4 h-4" />
+                      Calculate Payments
+                    </Button>
+                    <Button variant="outline" size="icon">
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))
+        )}
       </div>
-
-      {/* Similar Customers Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-            <Users className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="text-gray-900">What Similar Customers Chose</h3>
-            <p className="text-sm text-gray-600">Based on customers with similar profiles</p>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl text-gray-900 mb-1">67%</div>
-            <div className="text-sm text-gray-600">Chose to lease</div>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl text-gray-900 mb-1">RAV4 Hybrid</div>
-            <div className="text-sm text-gray-600">Most popular choice</div>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl text-gray-900 mb-1">4.8/5</div>
-            <div className="text-sm text-gray-600">Average satisfaction</div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* CTA */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-8 text-white text-center"
-      >
-        <h3 className="text-white mb-2">Ready to Get Started?</h3>
-        <p className="text-red-50 mb-6">
-          Schedule an appointment to test drive your favorites and complete your paperwork online
-        </p>
-        <Button
-          size="lg"
-          onClick={onScheduleAppointment}
-          className="bg-white text-red-600 hover:bg-red-50 gap-2"
-        >
-          Book Your Appointment
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </motion.div>
     </div>
   );
 }
