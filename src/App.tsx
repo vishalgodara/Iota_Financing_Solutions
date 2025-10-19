@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthDialogs } from './components/AuthDialogs';
-import ChatBot from './components/ChatBot';
 import { TexasMap } from './components/TexasMap';
 import iotaLogo from './assets/logo.jpeg';
 
@@ -55,9 +54,6 @@ function LandingPage() {
       <div className="flex-grow" style={{ width: '75%', height: '100vh' }}>
         <TexasMap />
       </div>
-
-      {/* ChatBot available on landing page */}
-      <ChatBot />
     </div>
   );
 }
