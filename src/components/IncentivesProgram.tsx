@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Gift, Fuel, Car as CarIcon, MapPin, TrendingUp, Award, Star, ChevronRight } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ImageWithFallback } from './figma/ImageWithFallback';
 
 export default function IncentivesProgram() {
   const [points, setPoints] = useState(2450);
