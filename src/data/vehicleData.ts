@@ -4,7 +4,7 @@ export const localVehicles = [
     model: 'Camry',
     year: 2025,
     category: 'sedan',
-    image_url: 'https://www.toyota.com/imgix/responsive/images/mlp/colorizer/2025/camry/1H1/1.png?w=1600&h=900&fm=webp&bg=white&q=75',
+    image_url: './assets/camry.avif',
     trims: [
       { name: 'LE', msrp: 28700, mpg_city: 53, mpg_highway: 50 },
       { name: 'SE', msrp: 31000, mpg_city: 48, mpg_highway: 47 },

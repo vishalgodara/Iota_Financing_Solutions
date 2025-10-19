@@ -12,7 +12,7 @@ import AppointmentScheduler from './components/AppointmentScheduler';
 import BlogSection from './components/BlogSection';
 import Discussion from './components/Discussion';
 import FinancingCalculator from './components/FinancingCalculator';
-import iotaLogo from 'figma:asset/45d4e7deba4e31aae519b9a7529eedca2b7c24cc.png';
+import iotaLogo from './assets/logo.jpeg';
 
 export type UserProfile = {
   lifestyle: {
