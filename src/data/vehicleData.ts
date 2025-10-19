@@ -6,10 +6,14 @@ export const localVehicles = [
     category: 'sedan',
     image_url: '../src/assets/camry.avif',
     trims: [
-      { name: 'LE', msrp: 28700, mpg_city: 53, mpg_highway: 50 },
-      { name: 'SE', msrp: 31000, mpg_city: 48, mpg_highway: 47 },
-      { name: 'XLE', msrp: 33700, mpg_city: 48, mpg_highway: 47 },
-      { name: 'XSE', msrp: 34900, mpg_city: 48, mpg_highway: 47 },
+      { name: 'LE', msrp: 28700, mpg_city: 38, mpg_highway: 40, powertrain: 'gas'},
+      { name: 'SE', msrp: 31000, mpg_city: 32, mpg_highway: 34, powertrain: 'gas' },
+      { name: 'XLE', msrp: 33700, mpg_city: 32, mpg_highway: 34, powertrain: 'gas'},
+      { name: 'XSE', msrp: 34900, mpg_city: 32, mpg_highway: 34, powertrain: 'gas' },
+      { name: 'LE Hybrid', msrp: 29950, mpg_city: 50, mpg_highway: 53, powertrain: 'hybrid'},
+      { name: 'SE hybrid', msrp: 31500, mpg_city: 48, mpg_highway: 50, powertrain: 'hybrid' },
+      { name: 'XLE hybrid', msrp: 34840, mpg_city: 48, mpg_highway: 50, powertrain: 'hybrid'},
+      { name: 'XSE hybrid', msrp: 35400, mpg_city: 48, mpg_highway: 50, powertrain: 'hybrid' },
     ]
   },
   {
@@ -32,10 +36,14 @@ export const localVehicles = [
     category: 'suv',
     image_url: '../src/assets/rav4.webp',
     trims: [
-        { name: 'LE', msrp: 29550, mpg_city: 27, mpg_highway: 35 },
-        { name: 'XLE', msrp: 31060, mpg_city: 27, mpg_highway: 35 },
-        { name: 'XLE Premium', msrp: 33950, mpg_city: 27, mpg_highway: 35 },
-        { name: 'Limited', msrp: 37855, mpg_city: 27, mpg_highway: 35 },
+        { name: 'LE', msrp: 29550, mpg_city: 27, mpg_highway: 35, powertrain: 'gas' },
+        { name: 'XLE', msrp: 31060, mpg_city: 27, mpg_highway: 35, powertrain: 'gas' },
+        { name: 'XLE Premium', msrp: 33950, mpg_city: 27, mpg_highway: 35 , powertrain: 'gas'},
+        { name: 'Limited', msrp: 37855, mpg_city: 27, mpg_highway: 35, powertrain: 'gas' },
+        { name: 'LE hybrid', msrp: 31500, mpg_city: 37, mpg_highway: 43, powertrain: 'hybrid' },
+        { name: 'XLE hybrid', msrp: 33000, mpg_city: 37, mpg_highway: 43, powertrain: 'hybrid' },
+        { name: 'XLE Premium hybrid', msrp: 35900, mpg_city: 37, mpg_highway: 43, powertrain: 'hybrid'},
+        { name: 'Limited hybrid', msrp: 40000, mpg_city: 37, mpg_highway: 43, powertrain: 'hybrid' },
     ]
   },
   {
@@ -92,8 +100,10 @@ export const localVehicles = [
         { name: 'SR', msrp: 40090, mpg_city: 18, mpg_highway: 24 },
         { name: 'SR5', msrp: 45960, mpg_city: 18, mpg_highway: 24 },
         { name: 'Limited', msrp: 54305, mpg_city: 18, mpg_highway: 24 },
-        { name: 'Platinum', msrp: 63675, mpg_city: 18, mpg_highway: 24 },
-        { name: '1794 Edition', msrp: 64360, mpg_city: 18, mpg_highway: 24 },
+        { name: 'Platinum', msrp: 63675, mpg_city: 18, mpg_highway: 24, powertrain: 'gas' },
+        { name: '1794 Edition', msrp: 64360, mpg_city: 18, mpg_highway: 24, powertrain: 'gas' },
+        { name: 'Platinum hybrid', msrp: 67600, mpg_city: 22, mpg_highway: 26, powertrain: 'hybrid' },
+        { name: '1794 Edition hybrid', msrp: 68300, mpg_city: 23, mpg_highway: 28, powertrain: 'hybrid' },
     ]
   },
   {

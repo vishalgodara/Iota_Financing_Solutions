@@ -227,7 +227,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
   // Calculate total costs (now uses resaleValue state)
   const leaseTotalCost = calculateLease() * leaseTerm + downPayment;
   const financeTotalCost = calculateFinance() * financeTerm + downPayment;
-  const netFinanceCost = financeTotalCost - resaleValue;
+  const netFinanceCost = financeTotalCost;
 
   return (
     <div className="space-y-8">
@@ -581,7 +581,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               <div className="space-y-2 pt-4 border-t border-red-400">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Total Lease Payments</span>
-                  <span className="text-gray-900">${(calculateLease() * leaseTerm).toLocaleString()}</span>
+                  <span className="text-gray-900">${((calculateLease() - monthlyInsurance) * leaseTerm).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Down Payment</span>
@@ -684,7 +684,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               <div className="space-y-2 pt-4 border-t border-gray-400">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Total Finance Payments</span>
-                  <span className="text-gray-900">${(calculateFinance() * financeTerm).toLocaleString()}</span>
+                  <span className="text-gray-900">${((calculateFinance() - monthlyInsurance) * financeTerm).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Down Payment</span>

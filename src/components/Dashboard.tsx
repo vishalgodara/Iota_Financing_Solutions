@@ -4,6 +4,7 @@ import { Car, GraduationCap, Gift, Calendar, Home, ChevronRight, Sparkles, Messa
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import QuestionnaireFlow from './QuestionnaireFlow';
+import type { UserProfile as QUserProfile } from './QuestionnaireFlow';
 import VehicleRecommendations from './VehicleRecommendations';
 import Vehicles from './Vehicles';
 import EducationalHub from './EducationalHub';
@@ -74,8 +75,28 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentSection]);
 
-  const handleQuestionnaireComplete = (profile: UserProfile) => {
-    setUserProfile(profile);
+  const handleQuestionnaireComplete = (profile: QUserProfile) => {
+    // Map the smaller QuestionnaireFlow.UserProfile into the Dashboard's fuller UserProfile
+    const merged: UserProfile = {
+      lifestyle: {
+        dailyCommute: profile.lifestyle.dailyCommute ?? 0,
+        passengers: (userProfile.lifestyle && userProfile.lifestyle.passengers) || 1,
+        vehicleType: profile.lifestyle.vehicleType as UserProfile['lifestyle']['vehicleType'],
+        powerTrain: profile.lifestyle.powerTrain as UserProfile['lifestyle']['powerTrain'],
+        primaryUse: (userProfile.lifestyle && (userProfile.lifestyle as any).primaryUse) || '',
+        parkingType: (userProfile.lifestyle && (userProfile.lifestyle as any).parkingType) || '',
+      },
+      financial: {
+        monthlyIncome: (userProfile.financial && userProfile.financial.monthlyIncome) || 0,
+        targetPayment: profile.financial.targetPayment,
+        downPayment: profile.financial.downPayment,
+        creditScore: profile.financial.creditScore,
+        multipleOwners: (userProfile.financial && userProfile.financial.multipleOwners) || false,
+      },
+      completed: true,
+    };
+
+    setUserProfile(merged);
     setCurrentSection('recommendations');
   };
 
@@ -199,6 +220,7 @@ export default function App() {
               <VehicleRecommendations 
                 userProfile={userProfile}
                 onScheduleAppointment={() => setCurrentSection('appointment')}
+                onCalculatePayments={handleCalculatePayments}
               />
             </motion.div>
           )}
@@ -358,7 +380,7 @@ function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnair
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            Hello {user?.user_metadata?.name}!
+            Hello {user?.user_metadata?.name.charAt(0).toUpperCase() + user?.user_metadata?.name.slice(1)}!
           </motion.h2>
           <motion.p 
             className="mt-6 md:mt-8 text-xl text-red-50 mb-8"
@@ -376,7 +398,7 @@ function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnair
           >
             <Button 
               size="lg" 
-              className="bg-white text-red-600 hover:bg-red-50 gap-2 group"
+              className="bg-white text-red-600 text-lg hover:bg-red-50 gap-2 group"
               onClick={onStartQuestionnaire}
             >
               Find your perfect Toyota!

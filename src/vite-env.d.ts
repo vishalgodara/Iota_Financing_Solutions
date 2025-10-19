@@ -10,8 +10,8 @@ interface ImportMeta {
 }
 
 // Image imports
-declare module '*.jpeg'
-declare module '*.jpg'
 declare module '*.png'
+declare module '*.jpg'
+declare module '*.jpeg'
 declare module '*.webp'
 declare module '*.avif'
