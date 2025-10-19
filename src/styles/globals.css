@@ -187,3 +187,314 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Vehicles Component Styles */
+.vehicles-page {
+  width: 100%;
+}
+
+.vehicles-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.header-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.header-subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+.tabs-container {
+  margin-bottom: 2rem;
+}
+
+.tabs-list {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.tab-trigger {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tab-trigger[data-state="active"] {
+  color: #dc2626;
+  border-bottom-color: #dc2626;
+}
+
+.tab-trigger:hover {
+  color: #991b1b;
+}
+
+.vehicles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.vehicle-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.vehicle-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-image-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.year-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: white;
+  color: #1f2937;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.category-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.card-header {
+  padding: 1.25rem;
+}
+
+.card-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.card-model {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0;
+}
+
+.card-trim {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
+.card-details {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.card-pricing {
+  margin-bottom: 0.5rem;
+}
+
+.card-pricing-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem 0;
+}
+
+.card-msrp {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0;
+}
+
+.card-est-payment {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0.25rem 0 0 0;
+}
+
+.card-content {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+}
+
+.calculate-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.calculate-button:hover {
+  background: #991b1b;
+}
+
+.no-vehicles {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.no-vehicles-text {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+.view-trims-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+.view-trims-button:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.chevron-icon {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.2s;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.trims-list {
+  margin-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.trim-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.trim-item:last-child {
+  margin-bottom: 0;
+}
+
+.trim-item:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.trim-item.selected {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.trim-info {
+  flex: 1;
+}
+
+.trim-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.trim-mpg {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.trim-pricing {
+  text-align: right;
+}
+
+.trim-msrp {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.trim-payment {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin: 0;
+}

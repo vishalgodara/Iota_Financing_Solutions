@@ -90,7 +90,7 @@ export default function BlogSection() {
         </div>
         <h2 className="text-gray-900 mb-2">Finance & Vehicle Insights</h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Expert advice, tips, and guides to help you make informed decisions about financing, leasing, and owning your Toyota.
+          Expert advice, tips, and guides to help you make informed decisions about financing, leasing, and owning your vehicle.
         </p>
       </motion.div>
 

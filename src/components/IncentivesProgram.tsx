@@ -137,7 +137,7 @@ export default function IncentivesProgram() {
         <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Gift className="w-8 h-8 text-red-600" />
         </div>
-        <h2 className="text-gray-900 mb-2">Toyota Rewards Program</h2>
+        <h2 className="text-gray-900 mb-2">Iota Rewards Program</h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
           Earn points on payments, services, and referrals. Redeem for gas discounts, rental cars, and more.
         </p>
@@ -234,17 +234,17 @@ export default function IncentivesProgram() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="p-6 h-full flex flex-col hover:shadow-lg transition-shadow">
-                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
-                    <reward.icon className="w-6 h-6 text-red-600" />
+                <Card className="p-4 h-full flex flex-col hover:shadow-lg transition-shadow">
+                  <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mb-3">
+                    <reward.icon className="w-5 h-5 text-red-600" />
                   </div>
-                  <h3 className="text-gray-900 mb-2">{reward.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4 flex-1">{reward.description}</p>
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant="secondary" className="text-lg">
+                  <h3 className="text-gray-900 mb-1.5">{reward.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3 flex-1">{reward.description}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="secondary">
                       {reward.points} pts
                     </Badge>
-                    <span className="text-green-600">{reward.value} value</span>
+                    <span className="text-sm text-green-600">{reward.value} value</span>
                   </div>
                   <Button
                     className="w-full"
@@ -271,7 +271,7 @@ export default function IncentivesProgram() {
                   <h3 className="text-gray-900 mb-2">How Gas Rewards Work</h3>
                   <p className="text-sm text-gray-700 mb-4">
                     Partner gas stations pay to be featured in our app, and we pass those savings directly to you!
-                    Simply redeem points for gas cards or show your Toyota Rewards card at checkout.
+                    Simply redeem points for gas cards or show your Iota Rewards card at checkout.
                   </p>
                   <div className="flex gap-2">
                     <Badge className="bg-green-600">Save up to 25¢/gallon</Badge>
@@ -391,7 +391,7 @@ export default function IncentivesProgram() {
             <Card className="p-8 bg-gradient-to-r from-red-600 to-red-700 text-white text-center">
               <h3 className="text-white mb-2">Refer a Friend, Earn 500 Points</h3>
               <p className="text-red-50 mb-6">
-                When your friend finances or leases through Toyota, you both get rewarded
+                When your friend finances or leases through Iota, you both get rewarded
               </p>
               <Button size="lg" className="bg-white text-red-600 hover:bg-red-50">
                 Get Your Referral Link

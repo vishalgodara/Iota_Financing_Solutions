@@ -1,43 +1,140 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Calculator, TrendingUp, TrendingDown, DollarSign, Calendar, Percent } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, DollarSign, Calendar, Percent, Car, Check } from 'lucide-react';
 import { Card } from './ui/card';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import type { UserProfile } from '../App';
+import type { UserProfile, SelectedVehicle } from '../App';
+
+type Accessory = {
+  id: string;
+  name: string;
+  price: number;
+  options?: { id: string; name: string; price: number }[];
+};
 
 type Props = {
   userProfile: UserProfile;
+  selectedVehicle: SelectedVehicle | null;
 };
 
-export default function FinancingCalculator({ userProfile }: Props) {
-  const [vehiclePrice, setVehiclePrice] = useState(35000);
+export default function FinancingCalculator({ userProfile, selectedVehicle }: Props) {
+  const [vehiclePrice, setVehiclePrice] = useState(selectedVehicle?.msrp || 35000);
   const [downPayment, setDownPayment] = useState(userProfile.financial.downPayment || 5000);
+  const [creditScore, setCreditScore] = useState(700);
   const [leaseTerm, setLeaseTerm] = useState(36);
   const [financeTerm, setFinanceTerm] = useState(60);
-  const [interestRate, setInterestRate] = useState(4.5);
   const [annualMileage, setAnnualMileage] = useState(12000);
+  
+  // Accessories state
+  const [selectedColor, setSelectedColor] = useState<string>('pearl-white');
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  
+  // Insurance state
+  const [includeInsurance, setIncludeInsurance] = useState(false);
+  
+  // Define accessories
+  const colors = [
+    { id: 'pearl-white', name: 'Pearl White', price: 0 },
+    { id: 'midnight-black', name: 'Midnight Black', price: 395 },
+    { id: 'silver-metallic', name: 'Silver Metallic', price: 395 },
+    { id: 'ruby-red', name: 'Ruby Red', price: 595 },
+  ];
+  
+  const accessories: Accessory[] = [
+    { id: 'floor-mats', name: 'All-Weather Floor Mats', price: 229 },
+    { id: 'seat-covers', name: 'Premium Seat Covers', price: 349 },
+    { id: 'wheel-locks', name: 'Alloy Wheel Locks', price: 85 },
+    { id: 'bike-rack', name: 'Bike Rack', price: 450 },
+  ];
+  
+  // Calculate total accessories cost
+  const accessoriesCost = 
+    (colors.find(c => c.id === selectedColor)?.price || 0) +
+    accessories
+      .filter(acc => selectedAccessories.includes(acc.id))
+      .reduce((sum, acc) => sum + acc.price, 0);
+  
+  const totalVehiclePrice = vehiclePrice + accessoriesCost;
+  
+  const toggleAccessory = (id: string) => {
+    setSelectedAccessories(prev => 
+      prev.includes(id) 
+        ? prev.filter(a => a !== id)
+        : [...prev, id]
+    );
+  };
+  
+  // Calculate insurance cost based on vehicle model
+  const getMonthlyInsurance = (): number => {
+    if (!includeInsurance || !selectedVehicle) return 0;
+    
+    const model = selectedVehicle.model.toLowerCase();
+    
+    // Insurance rates by model
+    if (model.includes('camry')) return 135;
+    if (model.includes('corolla') && !model.includes('cross')) return 120;
+    if (model.includes('corolla cross')) return 145;
+    if (model.includes('prius')) return 130;
+    if (model.includes('rav4')) return 165;
+    if (model.includes('highlander')) return 185;
+    if (model.includes('grand highlander')) return 195;
+    if (model.includes('4runner')) return 180;
+    if (model.includes('tacoma')) return 160;
+    if (model.includes('tundra')) return 175;
+    if (model.includes('bz4x')) return 140;
+    if (model.includes('sienna')) return 150;
+    
+    // Default insurance for unknown models
+    return 150;
+  };
+  
+  const monthlyInsurance = getMonthlyInsurance();
+
+  // Calculate interest rate based on credit score
+  const getInterestRate = (score: number): number => {
+    if (score >= 750) return 3.5;
+    if (score >= 700) return 4.5;
+    if (score >= 650) return 6.5;
+    if (score >= 600) return 9.0;
+    return 12.0;
+  };
+
+  const interestRate = getInterestRate(creditScore);
+
+  // Update vehicle price when selectedVehicle changes
+  useEffect(() => {
+    if (selectedVehicle) {
+      setVehiclePrice(selectedVehicle.msrp);
+    }
+  }, [selectedVehicle]);
 
   // Calculate lease payment
   const calculateLease = () => {
     const residualPercent = 0.55; // 55% residual after 3 years
     const moneyFactor = 0.00125; // ~3% APR
-    const residualValue = vehiclePrice * residualPercent;
-    const depreciation = (vehiclePrice - downPayment - residualValue) / leaseTerm;
-    const financing = (vehiclePrice - downPayment + residualValue) * moneyFactor;
-    return Math.round(depreciation + financing);
+    const residualValue = totalVehiclePrice * residualPercent;
+    const depreciation = (totalVehiclePrice - downPayment - residualValue) / leaseTerm;
+    const financing = (totalVehiclePrice - downPayment + residualValue) * moneyFactor;
+    const basePayment = depreciation + financing;
+    
+    // Adjust for mileage - standard is 12,000 miles/year
+    const standardMileage = 12000;
+    const mileageAdjustment = ((annualMileage - standardMileage) / 1000) * 15; // $15 per 1000 miles over/under
+    
+    return Math.round(basePayment + mileageAdjustment + monthlyInsurance);
   };
 
   // Calculate finance payment
   const calculateFinance = () => {
-    const principal = vehiclePrice - downPayment;
+    const principal = totalVehiclePrice - downPayment;
     const monthlyRate = interestRate / 100 / 12;
     const payment =
       (principal * monthlyRate * Math.pow(1 + monthlyRate, financeTerm)) /
       (Math.pow(1 + monthlyRate, financeTerm) - 1);
-    return Math.round(payment);
+    return Math.round(payment + monthlyInsurance);
   };
 
   // Calculate total costs
@@ -55,7 +152,7 @@ export default function FinancingCalculator({ userProfile }: Props) {
     if (mileage < 30000) depreciationRate -= 0.03;
 
     const resalePercent = Math.max(0.35, 1 - depreciationRate * yearsOwned);
-    return Math.round(vehiclePrice * resalePercent);
+    return Math.round(totalVehiclePrice * resalePercent);
   };
 
   const resaleValue = predictResaleValue();
@@ -63,19 +160,231 @@ export default function FinancingCalculator({ userProfile }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Selected Vehicle Badge */}
+      {selectedVehicle && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="p-4 bg-gradient-to-r from-red-50 to-pink-50 border-red-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <Car className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-600">Calculating for:</div>
+                <div className="text-gray-900">
+                  {selectedVehicle.year} {selectedVehicle.model} {selectedVehicle.trim}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-600">MSRP</div>
+                <div className="text-red-600">${selectedVehicle.msrp.toLocaleString()}</div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Accessories Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center"
+        transition={{ delay: 0.15 }}
       >
-        <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Calculator className="w-8 h-8 text-red-600" />
-        </div>
-        <h2 className="text-gray-900 mb-2">Lease vs Finance Calculator</h2>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Compare your options side-by-side and see which one fits your budget and lifestyle better
-        </p>
+        <Card className="p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-gray-900">Customize Your Vehicle</h3>
+              <p className="text-sm text-gray-600 mt-1">Add accessories and options to personalize your vehicle</p>
+            </div>
+            {accessoriesCost > 0 && (
+              <Badge className="bg-purple-600 text-lg px-4 py-2">
+                +${accessoriesCost.toLocaleString()}
+              </Badge>
+            )}
+          </div>
+
+          {/* Color Selection */}
+          <div className="mb-6">
+            <Label className="text-gray-700 mb-3 block">Exterior Color</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {colors.map((color) => (
+                <button
+                  key={color.id}
+                  onClick={() => setSelectedColor(color.id)}
+                  className={`relative p-4 rounded-lg border-2 transition-all ${
+                    selectedColor === color.id
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div
+                      className={`w-8 h-8 rounded-full border-2 border-gray-300 ${
+                        color.id === 'pearl-white' ? 'bg-white' :
+                        color.id === 'midnight-black' ? 'bg-black' :
+                        color.id === 'silver-metallic' ? 'bg-gray-400' :
+                        'bg-red-600'
+                      }`}
+                    />
+                    {selectedColor === color.id && (
+                      <Check className="w-5 h-5 text-red-600" />
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-900">{color.name}</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {color.price === 0 ? 'Standard' : `+${color.price}`}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Accessories Selection */}
+          <div>
+            <Label className="text-gray-700 mb-3 block">Accessories & Add-ons</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {accessories.map((accessory) => (
+                <button
+                  key={accessory.id}
+                  onClick={() => toggleAccessory(accessory.id)}
+                  className={`relative p-4 rounded-lg border-2 transition-all text-left ${
+                    selectedAccessories.includes(accessory.id)
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-900">{accessory.name}</div>
+                      <div className="text-xs text-gray-600 mt-1">+${accessory.price}</div>
+                    </div>
+                    <div
+                      className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ml-2 ${
+                        selectedAccessories.includes(accessory.id)
+                          ? 'bg-red-600 border-red-600'
+                          : 'border-gray-300'
+                      }`}
+                    >
+                      {selectedAccessories.includes(accessory.id) && (
+                        <Check className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Total Price Summary */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Base MSRP</span>
+                <span className="text-gray-900">${vehiclePrice.toLocaleString()}</span>
+              </div>
+              {accessoriesCost > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Accessories & Options</span>
+                  <span className="text-purple-600">+${accessoriesCost.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between pt-2 border-t border-gray-200">
+                <span className="text-gray-900">Total Vehicle Price</span>
+                <span className="text-red-600 text-lg">${totalVehiclePrice.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Insurance Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-gray-900">Add Insurance Coverage</h3>
+              <p className="text-sm text-gray-600 mt-1">Protect your investment with comprehensive insurance</p>
+            </div>
+            {includeInsurance && (
+              <Badge className="bg-blue-600 text-lg px-4 py-2">
+                +${monthlyInsurance}/mo
+              </Badge>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => setIncludeInsurance(!includeInsurance)}
+              className={`w-full p-6 rounded-lg border-2 transition-all text-left ${
+                includeInsurance
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        includeInsurance
+                          ? 'bg-blue-600 border-blue-600'
+                          : 'border-gray-300'
+                      }`}
+                    >
+                      {includeInsurance && (
+                        <Check className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                    <h4 className="text-gray-900">
+                      {includeInsurance ? 'Insurance Included' : 'Add Insurance Coverage'}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600 ml-9">
+                    Comprehensive coverage including collision, liability, and comprehensive protection
+                  </p>
+                  {selectedVehicle && (
+                    <div className="mt-3 ml-9">
+                      <p className="text-sm text-gray-700">
+                        Estimated for: <span className="font-medium">{selectedVehicle.model}</span>
+                      </p>
+                      <p className="text-sm text-blue-600 font-medium mt-1">
+                        ${monthlyInsurance}/month
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+
+            {includeInsurance && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="bg-blue-50 rounded-lg p-4 border border-blue-200"
+              >
+                <h4 className="text-gray-900 text-sm mb-2">✓ Coverage Includes:</h4>
+                <ul className="text-xs text-gray-700 space-y-1.5 ml-4">
+                  <li>• Collision coverage up to vehicle value</li>
+                  <li>• Comprehensive coverage (theft, vandalism, natural disasters)</li>
+                  <li>• Liability coverage ($300,000 minimum)</li>
+                  <li>• Medical payments coverage</li>
+                  <li>• Uninsured/underinsured motorist protection</li>
+                  <li>• Roadside assistance & towing</li>
+                </ul>
+                <p className="text-xs text-gray-600 mt-3">
+                  * Actual rates may vary based on your driving history, location, and coverage preferences
+                </p>
+              </motion.div>
+            )}
+          </div>
+        </Card>
       </motion.div>
 
       {/* Input Controls */}
@@ -83,27 +392,6 @@ export default function FinancingCalculator({ userProfile }: Props) {
         <h3 className="text-gray-900 mb-6">Adjust Your Parameters</h3>
         
         <div className="space-y-6">
-          {/* Vehicle Price */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-gray-700">Vehicle Price</Label>
-              <span className="text-xl text-red-600">${vehiclePrice.toLocaleString()}</span>
-            </div>
-            <Slider
-              value={[vehiclePrice]}
-              onValueChange={([value]) => setVehiclePrice(value)}
-              min={20000}
-              max={60000}
-              step={1000}
-              className="py-2"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>$20,000</span>
-              <span>$40,000</span>
-              <span>$60,000</span>
-            </div>
-          </div>
-
           {/* Down Payment */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -123,6 +411,32 @@ export default function FinancingCalculator({ userProfile }: Props) {
               <span>$7,500</span>
               <span>$15,000</span>
             </div>
+            <p className="text-xs text-gray-500 mt-2">Applies to both lease and finance options</p>
+          </div>
+
+          {/* Credit Score */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-gray-700">Credit Score</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-xl text-red-600">{creditScore}</span>
+                <span className="text-sm text-gray-500">({interestRate.toFixed(1)}% APR)</span>
+              </div>
+            </div>
+            <Slider
+              value={[creditScore]}
+              onValueChange={([value]) => setCreditScore(value)}
+              min={550}
+              max={850}
+              step={10}
+              className="py-2"
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>550</span>
+              <span>700</span>
+              <span>850</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Your credit score determines your interest rate for financing</p>
           </div>
 
           {/* Annual Mileage */}
@@ -144,27 +458,7 @@ export default function FinancingCalculator({ userProfile }: Props) {
               <span>15,000</span>
               <span>25,000</span>
             </div>
-          </div>
-
-          {/* Interest Rate */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-gray-700">Interest Rate (APR)</Label>
-              <span className="text-xl text-red-600">{interestRate.toFixed(1)}%</span>
-            </div>
-            <Slider
-              value={[interestRate]}
-              onValueChange={([value]) => setInterestRate(value)}
-              min={2.0}
-              max={12.0}
-              step={0.5}
-              className="py-2"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>2.0%</span>
-              <span>7.0%</span>
-              <span>12.0%</span>
-            </div>
+            <p className="text-xs text-gray-500 mt-2">Affects lease pricing and finance resale value</p>
           </div>
         </div>
       </Card>
@@ -176,14 +470,15 @@ export default function FinancingCalculator({ userProfile }: Props) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
+          className="flex"
         >
-          <Card className="p-6 border-2 border-blue-200 bg-blue-50/50">
+          <Card className="p-6 border-2 border-blue-200 bg-blue-50/50 flex flex-col w-full">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-gray-900">Lease</h3>
               <Badge className="bg-blue-600">Lower Monthly Payment</Badge>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1 flex flex-col">
               {/* Monthly Payment */}
               <div className="bg-white rounded-lg p-4">
                 <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
@@ -221,6 +516,12 @@ export default function FinancingCalculator({ userProfile }: Props) {
                   <span className="text-gray-600">Down Payment</span>
                   <span className="text-gray-900">${downPayment.toLocaleString()}</span>
                 </div>
+                {includeInsurance && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Insurance ({leaseTerm} months)</span>
+                    <span className="text-gray-900">${(monthlyInsurance * leaseTerm).toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm pt-2 border-t border-blue-100">
                   <span className="text-gray-700">Total Cost</span>
                   <span className="text-blue-600">${leaseTotalCost.toLocaleString()}</span>
@@ -246,6 +547,23 @@ export default function FinancingCalculator({ userProfile }: Props) {
                   </p>
                 </div>
               )}
+
+              {/* Spacer to push Monthly Savings to bottom */}
+              <div className="flex-1"></div>
+
+              {/* Monthly Savings */}
+              <div className="bg-white rounded-lg p-4 border-2 border-blue-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-gray-700">Monthly Savings</span>
+                </div>
+                <div className="text-2xl text-blue-600">
+                  ${Math.abs(calculateFinance() - calculateLease())}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {calculateLease() < calculateFinance() ? 'vs. financing' : 'vs. leasing'}
+                </div>
+              </div>
             </div>
           </Card>
         </motion.div>
@@ -255,14 +573,15 @@ export default function FinancingCalculator({ userProfile }: Props) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
+          className="flex"
         >
-          <Card className="p-6 border-2 border-green-200 bg-green-50/50">
+          <Card className="p-6 border-2 border-green-200 bg-green-50/50 flex flex-col w-full">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-gray-900">Finance</h3>
               <Badge className="bg-green-600">Own the Vehicle</Badge>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1 flex flex-col">
               {/* Monthly Payment */}
               <div className="bg-white rounded-lg p-4">
                 <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
@@ -300,6 +619,12 @@ export default function FinancingCalculator({ userProfile }: Props) {
                   <span className="text-gray-600">Down Payment</span>
                   <span className="text-gray-900">${downPayment.toLocaleString()}</span>
                 </div>
+                {includeInsurance && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Insurance ({financeTerm} months)</span>
+                    <span className="text-gray-900">${(monthlyInsurance * financeTerm).toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Predicted Resale Value</span>
                   <span className="text-green-600">-${resaleValue.toLocaleString()}</span>
@@ -321,14 +646,17 @@ export default function FinancingCalculator({ userProfile }: Props) {
                 </ul>
               </div>
 
+              {/* Spacer to push Resale Prediction to bottom */}
+              <div className="flex-1"></div>
+
               {/* Resale Prediction */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4 border-2 border-green-300">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-900">Predicted Resale Value</span>
+                  <span className="text-sm text-gray-700">Predicted Resale Value</span>
                 </div>
-                <div className="text-2xl text-green-600 mb-1">${resaleValue.toLocaleString()}</div>
-                <div className="text-xs text-green-700">
+                <div className="text-2xl text-green-600">${resaleValue.toLocaleString()}</div>
+                <div className="text-xs text-gray-600 mt-1">
                   After {financeTerm / 12} years with {(annualMileage * financeTerm / 12).toLocaleString()} miles
                 </div>
               </div>
@@ -382,43 +710,6 @@ export default function FinancingCalculator({ userProfile }: Props) {
         </Card>
       </motion.div>
 
-      {/* Additional Info */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="p-4 bg-gray-50">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-gray-600" />
-            <span className="text-sm text-gray-700">Monthly Savings</span>
-          </div>
-          <div className="text-2xl text-gray-900">
-            ${Math.abs(calculateFinance() - calculateLease())}
-          </div>
-          <div className="text-xs text-gray-600 mt-1">
-            {calculateLease() < calculateFinance() ? 'Lease is lower' : 'Finance is lower'}
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-gray-50">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-gray-600" />
-            <span className="text-sm text-gray-700">Total Payments</span>
-          </div>
-          <div className="text-2xl text-gray-900">
-            {Math.max(leaseTerm, financeTerm)}
-          </div>
-          <div className="text-xs text-gray-600 mt-1">months of payments</div>
-        </Card>
-
-        <Card className="p-4 bg-gray-50">
-          <div className="flex items-center gap-2 mb-2">
-            <Percent className="w-4 h-4 text-gray-600" />
-            <span className="text-sm text-gray-700">Est. Resale Rate</span>
-          </div>
-          <div className="text-2xl text-gray-900">
-            {Math.round((resaleValue / vehiclePrice) * 100)}%
-          </div>
-          <div className="text-xs text-gray-600 mt-1">of original value</div>
-        </Card>
-      </div>
     </div>
   );
 }
