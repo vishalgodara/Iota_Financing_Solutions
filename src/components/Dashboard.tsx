@@ -143,7 +143,6 @@ export default function App() {
             </Button>
             <div className="flex items-center gap-3">
               <div className="hidden md:block text-sm text-gray-600">
-                {user?.user_metadata?.name || user?.email}
               </div>
               <Button 
                 variant="outline"
@@ -309,6 +308,8 @@ export default function App() {
 }
 
 function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnaire: () => void; onNavigate: (section: Section) => void }) {
+  const { user, signOut } = useAuth();
+
   const features = [
     {
       icon: Car,
@@ -357,7 +358,7 @@ function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnair
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            Find Your Perfect Vehicle
+            Hello {user?.user_metadata?.name}!
           </motion.h2>
           <motion.p 
             className="mt-6 md:mt-8 text-xl text-red-50 mb-8"
@@ -378,7 +379,7 @@ function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnair
               className="bg-white text-red-600 hover:bg-red-50 gap-2 group"
               onClick={onStartQuestionnaire}
             >
-              Get Started
+              Find your perfect Toyota!
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>

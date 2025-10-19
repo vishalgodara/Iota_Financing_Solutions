@@ -34,6 +34,9 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
   
   // Insurance state
   const [includeInsurance, setIncludeInsurance] = useState(false);
+  // API-provided insurance (overrides local heuristic when available)
+  const [apiInsuranceMonthly, setApiInsuranceMonthly] = useState<number | null>(null);
+  const [apiInsuranceTotal, setApiInsuranceTotal] = useState<number | null>(null);
   
   // --- NEW STATE for API-driven resale value ---
   const [resaleValue, setResaleValue] = useState(0);
@@ -96,7 +99,8 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
     return 150;
   };
   
-  const monthlyInsurance = getMonthlyInsurance();
+  const defaultMonthlyInsurance = getMonthlyInsurance();
+  const monthlyInsurance = includeInsurance ? (apiInsuranceMonthly ?? defaultMonthlyInsurance) : 0;
 
   // Calculate interest rate based on credit score
   const getInterestRate = (score: number): number => {
@@ -180,12 +184,27 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
             throw new Error('API request failed');
           }
 
-          const data = await response.json(); // Expects { resaleValue: 12345 }
+          const data = await response.json(); // Expects { resaleValue: 12345, insuranceMonthly: 120, insuranceTotal: 7200 }
 
           if (data.resaleValue) {
             setResaleValue(data.resaleValue);
           } else {
             throw new Error('Invalid response format from API');
+          }
+
+          // Set API insurance if provided (optional)
+          if (typeof data.insuranceMonthly === 'number') {
+            setApiInsuranceMonthly(data.insuranceMonthly);
+            // prefer provided total or compute from monthly
+            if (typeof data.insuranceTotal === 'number') {
+              setApiInsuranceTotal(data.insuranceTotal);
+            } else {
+              setApiInsuranceTotal(Math.round(data.insuranceMonthly * yearsOwned * 12));
+            }
+          } else {
+            // clear previous API values if none returned
+            setApiInsuranceMonthly(null);
+            setApiInsuranceTotal(null);
           }
         } catch (error) {
           console.error('Error fetching resale value:', error);
@@ -219,20 +238,20 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="p-4 bg-gradient-to-r from-red-50 to-pink-50 border-red-200">
+          <Card className="p-4 bg-gradient-to-r from-red-50 to-pink-50 border-red-600">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                 <Car className="w-5 h-5 text-red-600" />
               </div>
               <div className="flex-1">
-                <div className="text-sm text-gray-600">Calculating for:</div>
-                <div className="text-gray-900">
+                <div className="text-sm text-gray-700">Calculating for:</div>
+                <div className="text-gray-900 font-bold text-xl">
                   {selectedVehicle.year} {selectedVehicle.model} {selectedVehicle.trim}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-600">MSRP</div>
-                <div className="text-red-600">${selectedVehicle.msrp.toLocaleString()}</div>
+                <div className="text-sm text-gray-700">MSRP</div>
+                <div className="text-red-600 font-bold text-2xl">${selectedVehicle.msrp.toLocaleString()}</div>
               </div>
             </div>
           </Card>
@@ -252,7 +271,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               <p className="text-sm text-gray-600 mt-1">Add accessories and options to personalize your vehicle</p>
             </div>
             {accessoriesCost > 0 && (
-              <Badge className="bg-purple-600 text-lg px-4 py-2">
+              <Badge className="bg-gray-500 text-lg px-4 py-2">
                 +${accessoriesCost.toLocaleString()}
               </Badge>
             )}
@@ -559,9 +578,9 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               </div>
 
               {/* Cost Breakdown */}
-              <div className="space-y-2 pt-4 border-t border-red-200">
+              <div className="space-y-2 pt-4 border-t border-red-400">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Lease Payments</span>
+                  <span className="text-gray-700">Total Lease Payments</span>
                   <span className="text-gray-900">${(calculateLease() * leaseTerm).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -574,7 +593,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                     <span className="text-gray-900">${(monthlyInsurance * leaseTerm).toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm pt-2 border-t border-blue-100">
+                <div className="flex justify-between text-sm pt-2 border-t border-red-400">
                   <span className="text-gray-700">Total Cost</span>
                   <span className="text-red-600 font-bold">${leaseTotalCost.toLocaleString()}</span>
                 </div>
@@ -636,14 +655,14 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
             <div className="space-y-4 flex-1 flex flex-col">
               {/* Monthly Payment */}
               <div className="bg-white rounded-lg p-4">
-                <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
-                <div className="text-3xl text-green-600">${calculateFinance()}</div>
-                <div className="text-xs text-gray-500 mt-1">{financeTerm}-month term</div>
+                <div className="text-sm text-gray-800 mb-1">Monthly Payment</div>
+                <div className="text-3xl text-black">${calculateFinance()}</div>
+                <div className="text-xs text-gray-600 mt-1">{financeTerm}-month term</div>
               </div>
-
+            </div>
               {/* Term Selector */}
               <div>
-                <Label className="text-sm text-gray-700 mb-2 block">Finance Term</Label>
+                <Label className="text-sm text-gray-800 mb-2 block">Finance Term</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[48, 60, 72].map((term) => (
                     <button
@@ -651,8 +670,8 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                       onClick={() => setFinanceTerm(term)}
                       className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                         financeTerm === term
-                          ? 'bg-green-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
+                          ? 'bg-gray-700 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-300'
                       }`}
                     >
                       {term} mo
@@ -662,41 +681,39 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               </div>
 
               {/* Cost Breakdown */}
-              <div className="space-y-2 pt-4 border-t border-green-200">
+              <div className="space-y-2 pt-4 border-t border-gray-400">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Finance Payments</span>
+                  <span className="text-gray-700">Total Finance Payments</span>
                   <span className="text-gray-900">${(calculateFinance() * financeTerm).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Down Payment</span>
-                  <span className="text-gray-900">${downPayment.toLocaleString()}</span>
+                  <span className="text-gray-700">Down Payment</span>
+                  <span className="text-gray-700">${downPayment.toLocaleString()}</span>
                 </div>
                 {includeInsurance && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Insurance ({financeTerm} months)</span>
+                    <span className="text-gray-700">Insurance ({financeTerm} months)</span>
                     <span className="text-gray-900">${(monthlyInsurance * financeTerm).toLocaleString()}</span>
                   </div>
                 )}
-                {/* --- UPDATED Resale Value in breakdown --- */}
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Predicted Resale Value</span>
-                  <span className="text-green-600">
-                    {isResaleLoading ? '...' : `-$${resaleValue.toLocaleString()}`}
-                  </span>
+                {/* <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Predicted Resale Value</span>
+                  <span className="text-red-900">-${resaleValue.toLocaleString()}</span>
+                </div> */}
+                <div className="flex justify-between text-sm pt-2 border-t border-gray-400">
+                  <span className="text-gray-700">Net Cost</span>
+                  <span className="text-black font-bold">${netFinanceCost.toLocaleString()}</span>
                 </div>
+                
                 {/* --- UPDATED Net Cost in breakdown --- */}
                 <div className="flex justify-between text-sm pt-2 border-t border-green-100">
-                  <span className="text-gray-700">Net Cost</span>
-                  <span className="text-green-600">
-                    {isResaleLoading ? '...' : `$${netFinanceCost.toLocaleString()}`}
-                  </span>
                 </div>
               </div>
 
               {/* Pros */}
               <div className="bg-white rounded-lg p-4">
-                <div className="text-sm text-gray-700 mb-2">✓ Advantages</div>
-                <ul className="text-xs text-gray-600 space-y-1">
+                <div className="text-sm text-gray-800 mb-2">✓ Advantages</div>
+                <ul className="text-xs text-gray-700 space-y-1">
                   <li>• You own the vehicle</li>
                   <li>• No mileage restrictions</li>
                   <li>• Build equity over time</li>
@@ -707,12 +724,14 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               {/* Spacer to push Resale Prediction to bottom */}
               <div className="flex-1"></div>
 
+              {/* Resale Prediction */}
+              <div className="bg-white rounded-lg p-4 border-2 border-black">
               {/* --- UPDATED Resale Prediction card with loading/error states --- */}
-              <div className="bg-white rounded-lg p-4 border-2 border-green-300 min-h-[100px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-700">Predicted Resale Value</span>
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-black" />
+                <span className="text-sm text-gray-700">Predicted Resale Value</span>
+              </div>
+            
                 
                 {isResaleLoading ? (
                   <div className="text-gray-600 animate-pulse">
@@ -722,14 +741,13 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                   <div className="text-red-600 text-sm">{resaleError}</div>
                 ) : (
                   <>
-                    <div className="text-2xl text-green-600">${resaleValue.toLocaleString()}</div>
+                    <div className="text-2xl text-black">${resaleValue.toLocaleString()}</div>
                     <div className="text-xs text-gray-600 mt-1">
                       After {financeTerm / 12} years with {(annualMileage * financeTerm / 12).toLocaleString()} miles
                     </div>
                   </>
                 )}
               </div>
-            </div>
           </Card>
         </motion.div>
       </div>
@@ -740,9 +758,9 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="p-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
+        <Card className="p-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-400">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-6 h-6 text-purple-600" />
             </div>
             <div className="flex-1">
