@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthDialogs } from './components/AuthDialogs';
+import ChatBot from './components/ChatBot';
 import iotaLogo from './assets/logo.jpeg';
 
 function LandingPage() {
@@ -30,6 +31,8 @@ function LandingPage() {
           </div>
         </div>
       </div>
+      {/* ChatBot available on landing page */}
+      <ChatBot />
     </div>
   );
 }

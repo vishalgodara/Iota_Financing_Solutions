@@ -3,6 +3,7 @@
       "version": "0.1.0",
       "private": true,
       "dependencies": {
+            "@elevenlabs/elevenlabs-js": "^2.19.0",
             "@google/generative-ai": "^0.24.1",
             "@radix-ui/react-accordion": "^1.2.3",
             "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -35,6 +36,9 @@
             "clsx": "*",
             "cmdk": "^1.1.1",
             "cors": "^2.8.5",
+            "dotenv": "^17.2.3",
+            "elevenlabs": "^1.59.0",
+            "elevenlabs-js": "^1.2.6",
             "embla-carousel-react": "^8.6.0",
             "express": "^5.1.0",
             "framer-motion": "^12.23.24",

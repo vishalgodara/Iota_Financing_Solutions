@@ -1,8 +1,21 @@
 // Minimal Express server setup
+require('dotenv').config({ path: __dirname + '/.env' });
 const express = require('express');
 const cors = require('cors');
+const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
 
 const app = express();
+
+// Log environment variables to verify they're loaded
+console.log('🔐 Environment check:');
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✅ Loaded' : '❌ Missing');
+console.log('ELEVENLABS_API_KEY:', process.env.ELEVENLABS_API_KEY ? '✅ Loaded' : '❌ Missing');
+
+// Fallback: if not loaded from .env, set it manually (temporary fix)
+if (!process.env.ELEVENLABS_API_KEY) {
+  console.log('⚠️  Setting ELEVENLABS_API_KEY manually as fallback');
+  process.env.ELEVENLABS_API_KEY = 'sk_71d4bb0cb7fb12f8c06f741b2461d30bcacffbeac8f6876a';
+}
 
 
 // Try to load the Google Generative AI SDK if available. It's optional — we
@@ -40,6 +53,140 @@ app.use(express.json());
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// Chat endpoint for Gemini AI chatbot
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    console.log('Received /api/chat request with message:', message);
+
+    // Enhanced system prompt for automotive financing context
+    const systemContext = `You are an expert automotive financing advisor for Iota Financial Solutions. 
+Your role is to help customers understand vehicle financing, leasing, trade-ins, and automotive financial products.
+Provide clear, concise, and helpful answers. Be friendly and professional.
+Focus on Toyota vehicles and their financing options when relevant.
+Keep responses conversational and under 150 words unless more detail is specifically requested.`;
+
+    const fullPrompt = `${systemContext}\n\nCustomer question: ${message}\n\nYour response:`;
+
+    let responseText;
+
+    // Try to use Gemini if available
+    if (genAI && typeof genAI.GoogleGenerativeAI === 'function') {
+      try {
+        const googleAI = new genAI.GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+        const model = googleAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Updated model name
+        
+        const result = await model.generateContent(fullPrompt);
+        const response = await result.response;
+        responseText = response.text();
+        
+        console.log('🤖 Gemini response:', responseText);
+      } catch (err) {
+        console.error('Gemini API call failed:', err);
+        // Fallback to heuristic response
+        responseText = generateFallbackResponse(message);
+      }
+    } else {
+      // No Gemini available - use fallback
+      responseText = generateFallbackResponse(message);
+    }
+
+    res.status(200).json({ response: responseText });
+
+  } catch (error) {
+    console.error('❌ Error in /api/chat:', error);
+    res.status(500).json({ error: 'Failed to process chat message' });
+  }
+});
+
+// Text-to-speech endpoint using ElevenLabs
+app.post('/api/text-to-speech', async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+    
+    console.log('🔑 Checking ElevenLabs API key...');
+    console.log('API Key exists:', !!ELEVENLABS_API_KEY);
+    console.log('API Key length:', ELEVENLABS_API_KEY ? ELEVENLABS_API_KEY.length : 0);
+    
+    if (!ELEVENLABS_API_KEY) {
+      console.warn('⚠️ ElevenLabs API key not configured');
+      return res.status(200).json({ audio: null, message: 'Voice disabled' });
+    }
+
+    console.log('🎤 Converting text to speech with ElevenLabs SDK...');
+    console.log('📝 Text:', text.substring(0, 50) + '...');
+
+    const elevenlabs = new ElevenLabsClient({
+      apiKey: ELEVENLABS_API_KEY
+    });
+
+    // Correct method from official docs
+    const audio = await elevenlabs.textToSpeech.convert(
+      'JBFqnCBsd6RMkjVDRZzb', // voice_id
+      {
+        text: text,
+        model_id: 'eleven_multilingual_v2',
+      }
+    );
+
+    // Convert audio stream to buffer
+    const chunks = [];
+    for await (const chunk of audio) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+    const base64Audio = audioBuffer.toString('base64');
+    
+    console.log('✅ Text-to-speech conversion successful');
+    res.status(200).json({ audio: base64Audio });
+
+  } catch (error) {
+    console.error('❌ Error in /api/text-to-speech:', error);
+    console.error('Error details:', error.message);
+    // Return null audio instead of error - voice is optional
+    res.status(200).json({ audio: null, message: 'Voice feature unavailable' });
+  }
+});
+
+// Fallback response generator for when Gemini is unavailable
+function generateFallbackResponse(message) {
+  const messageLower = message.toLowerCase();
+  
+  if (messageLower.includes('financing') || messageLower.includes('loan')) {
+    return "Great question about financing! We offer competitive rates and flexible terms for new and used Toyota vehicles. Our financing options include traditional auto loans with terms from 24 to 72 months. Would you like to use our financing calculator to see estimated monthly payments?";
+  }
+  
+  if (messageLower.includes('lease') || messageLower.includes('leasing')) {
+    return "Leasing is a popular option! With a lease, you typically have lower monthly payments compared to buying, and you can drive a new vehicle every few years. Lease terms usually range from 24 to 36 months. Would you like to learn more about our current lease offers?";
+  }
+  
+  if (messageLower.includes('trade') || messageLower.includes('trade-in')) {
+    return "We'd love to help you with your trade-in! The value depends on your vehicle's year, make, model, mileage, and condition. You can use our trade-in estimator tool, or schedule an appointment for a quick in-person appraisal. What vehicle are you looking to trade in?";
+  }
+  
+  if (messageLower.includes('credit') || messageLower.includes('credit score')) {
+    return "Your credit score does affect your financing terms, but we work with a variety of credit situations! Even if your credit isn't perfect, we have programs that can help. Generally, higher credit scores (700+) get the best rates, but we can often find solutions for scores as low as 600. Would you like to discuss your specific situation?";
+  }
+  
+  if (messageLower.includes('payment') || messageLower.includes('monthly')) {
+    return "Monthly payments depend on several factors: the vehicle price, your down payment, interest rate, and loan term. For example, a $30,000 vehicle with $3,000 down at 5% APR for 60 months would be around $510/month. Use our calculator to see estimates for your specific situation!";
+  }
+  
+  // Generic fallback
+  return "Thank you for your question! I'm here to help with automotive financing, leasing, trade-ins, and vehicle purchases. Our team at Iota Financial Solutions can provide personalized assistance. Would you like to schedule an appointment with one of our financing specialists, or is there something specific I can help you with?";
+}
 
 app.post('/api/predict-resale', async (req, res) => {
   try {

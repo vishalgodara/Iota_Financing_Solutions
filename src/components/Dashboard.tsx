@@ -13,6 +13,7 @@ import AppointmentScheduler from './AppointmentScheduler';
 import BlogSection from './BlogSection';
 import Discussion from './Discussion';
 import FinancingCalculator from './FinancingCalculator';
+import ChatBot from './ChatBot';
 import iotaLogo from '../assets/logo.jpeg';
 
 export type UserProfile = {
@@ -300,6 +301,9 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* ChatBot available on all dashboard pages */}
+      <ChatBot />
     </div>
   );
 }
