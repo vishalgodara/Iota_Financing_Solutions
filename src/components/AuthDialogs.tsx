@@ -33,13 +33,10 @@ export function AuthDialogs({ mode: initialMode = 'signin' }: AuthDialogsProps) 
 
     try {
       if (mode === 'signin') {
-        console.log('🔑 Attempting sign in...', email);
         const { error } = await signIn(email, password);
         if (error) {
-          console.error('❌ Sign in error:', error);
           setError(error.message);
         } else {
-          console.log('✅ Sign in successful! Navigating to dashboard...');
           setSuccessMessage('✅ Signed in successfully!');
           setTimeout(() => {
             setIsOpen(false);
@@ -47,23 +44,18 @@ export function AuthDialogs({ mode: initialMode = 'signin' }: AuthDialogsProps) 
           }, 1000);
         }
       } else {
-        console.log('📝 Attempting sign up...', email);
         const result = await signUp(email, password, name);
         if (result.error) {
-          console.error('❌ Sign up error:', result.error);
           setError(result.error.message);
         } else if (result.message) {
-          console.log('📧 Email confirmation required');
           setSuccessMessage(`📧 ${result.message}`);
           // Don't auto-close if email confirmation is needed
         } else {
-          console.log('✅ Sign up successful!');
           setSuccessMessage('✅ Account created successfully! You can now close this and sign in.');
           // Keep the success message visible, user can manually close the dialog
         }
       }
     } catch (err) {
-      console.error('💥 Unexpected error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -79,7 +71,11 @@ export function AuthDialogs({ mode: initialMode = 'signin' }: AuthDialogsProps) 
   return (
     <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
       <Dialog.Trigger asChild>
-        <Button variant="outline" size="lg">
+        <Button 
+          variant={initialMode === 'signin' ? 'default' : 'outline'} 
+          size="lg" 
+          className="w-full"
+        >
           {initialMode === 'signin' ? 'Sign In' : 'Sign Up'}
         </Button>
       </Dialog.Trigger>
