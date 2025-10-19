@@ -472,23 +472,23 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
           transition={{ delay: 0.2 }}
           className="flex"
         >
-          <Card className="p-6 border-2 border-blue-200 bg-blue-50/50 flex flex-col w-full">
+          <Card className="p-6 border-2 border-red-600 bg-red-50/50 flex flex-col w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-gray-900">Lease</h3>
-              <Badge className="bg-blue-600">Lower Monthly Payment</Badge>
+              <h3 className="text-black">Lease</h3>
+              <Badge className="bg-red-600">More savings</Badge>
             </div>
 
             <div className="space-y-4 flex-1 flex flex-col">
               {/* Monthly Payment */}
               <div className="bg-white rounded-lg p-4">
-                <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
-                <div className="text-3xl text-blue-600">${calculateLease()}</div>
-                <div className="text-xs text-gray-500 mt-1">{leaseTerm}-month term</div>
+                <div className="text-sm text-gray-900 mb-1">Monthly Payment</div>
+                <div className="text-3xl text-red-600">${calculateLease()}</div>
+                <div className="text-xs text-gray-700 mt-1">{leaseTerm}-month term</div>
               </div>
 
               {/* Term Selector */}
               <div>
-                <Label className="text-sm text-gray-700 mb-2 block">Lease Term</Label>
+                <Label className="text-sm text-gray-900 mb-2 block">Lease Term</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[24, 36, 48].map((term) => (
                     <button
@@ -496,8 +496,8 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                       onClick={() => setLeaseTerm(term)}
                       className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                         leaseTerm === term
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-white text-black hover:bg-gray-300'
                       }`}
                     >
                       {term} mo
@@ -507,31 +507,31 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               </div>
 
               {/* Cost Breakdown */}
-              <div className="space-y-2 pt-4 border-t border-blue-200">
+              <div className="space-y-2 pt-4 border-t border-red-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Total Lease Payments</span>
                   <span className="text-gray-900">${(calculateLease() * leaseTerm).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Down Payment</span>
+                  <span className="text-gray-700">Down Payment</span>
                   <span className="text-gray-900">${downPayment.toLocaleString()}</span>
                 </div>
                 {includeInsurance && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Insurance ({leaseTerm} months)</span>
+                    <span className="text-gray-700">Insurance ({leaseTerm} months)</span>
                     <span className="text-gray-900">${(monthlyInsurance * leaseTerm).toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm pt-2 border-t border-blue-100">
                   <span className="text-gray-700">Total Cost</span>
-                  <span className="text-blue-600">${leaseTotalCost.toLocaleString()}</span>
+                  <span className="text-red-600 font-bold">${leaseTotalCost.toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Pros */}
               <div className="bg-white rounded-lg p-4">
-                <div className="text-sm text-gray-700 mb-2">✓ Advantages</div>
-                <ul className="text-xs text-gray-600 space-y-1">
+                <div className="text-sm text-gray-800 mb-2">✓ Advantages</div>
+                <ul className="text-xs text-gray-700 space-y-1">
                   <li>• Lower monthly payments</li>
                   <li>• Always drive a newer vehicle</li>
                   <li>• Warranty coverage included</li>
@@ -541,7 +541,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
 
               {/* Mileage Warning */}
               {annualMileage > 12000 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="bg-amber-30 border border-amber-200 rounded-lg p-3">
                   <p className="text-xs text-amber-900">
                     ⚠️ High mileage may incur additional fees (typically $0.20-$0.30 per excess mile)
                   </p>
@@ -552,12 +552,12 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               <div className="flex-1"></div>
 
               {/* Monthly Savings */}
-              <div className="bg-white rounded-lg p-4 border-2 border-blue-300">
+              <div className="bg-white rounded-lg p-4 border-2 border-red-500">
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-blue-600" />
+                  <DollarSign className="w-4 h-4 text-red-600" />
                   <span className="text-sm text-gray-700">Monthly Savings</span>
                 </div>
-                <div className="text-2xl text-blue-600">
+                <div className="text-2xl text-red-600">
                   ${Math.abs(calculateFinance() - calculateLease())}
                 </div>
                 <div className="text-xs text-gray-600 mt-1">
@@ -575,10 +575,10 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
           transition={{ delay: 0.3 }}
           className="flex"
         >
-          <Card className="p-6 border-2 border-green-200 bg-green-50/50 flex flex-col w-full">
+          <Card className="p-6 border-2 border-black bg-gray-100 flex flex-col w-full">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-gray-900">Finance</h3>
-              <Badge className="bg-green-600">Own the Vehicle</Badge>
+              <Badge className="bg-gray-700">Own the Vehicle</Badge>
             </div>
 
             <div className="space-y-4 flex-1 flex flex-col">

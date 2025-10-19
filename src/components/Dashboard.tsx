@@ -98,9 +98,9 @@ export default function App() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16 gap-8">
             <motion.div 
-              className="flex items-center gap-3 cursor-pointer"
+              className="flex items-center gap-3 cursor-pointer flex-shrink-0"
               onClick={() => setCurrentSection('home')}
               whileHover={{ scale: 1.02 }}
             >
@@ -111,17 +111,21 @@ export default function App() {
               />
               <div>
                 <h1 className="text-red-600">Iota Financial Solutions</h1>
-                <p className="text-xs text-gray-500">Your Journey, Simplified</p>
+                {/* <p className="text-xs text-gray-500">Your Journey, Simplified</p> */}
               </div>
             </motion.div>
             
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex flex-1 items-center justify-center gap-1">
               {navigation.map((item) => (
                 <Button
                   key={item.id}
-                  variant={currentSection === item.id ? 'default' : 'ghost'}
+                  variant="ghost"
                   onClick={() => setCurrentSection(item.id)}
-                  className="gap-2"
+                  className={`gap-2 rounded-full transition-all ${
+                    currentSection === item.id 
+                      ? 'bg-gray-900 text-white hover:bg-gray-900' 
+                      : 'text-black hover:bg-gray-100'
+                  }`}
                 >
                   <item.icon className="w-4 h-4" />
                   {item.label}
@@ -129,6 +133,13 @@ export default function App() {
               ))}
             </nav>
 
+            <Button
+              className="md:hidden flex-shrink-0"
+              variant="outline"
+              onClick={() => setCurrentSection(currentSection === 'home' ? 'questionnaire' : 'home')}
+            >
+              Menu
+            </Button>
             <div className="flex items-center gap-3">
               <div className="hidden md:block text-sm text-gray-600">
                 {user?.user_metadata?.name || user?.email}
@@ -296,13 +307,6 @@ export default function App() {
 function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnaire: () => void; onNavigate: (section: Section) => void }) {
   const features = [
     {
-      icon: Sparkles,
-      title: 'Personalized Matching',
-      description: 'Answer a few questions and get vehicle recommendations tailored to your lifestyle and budget',
-      action: 'Start Questionnaire',
-      onClick: onStartQuestionnaire,
-    },
-    {
       icon: Car,
       title: 'Browse Vehicles',
       description: 'Explore our complete lineup with pricing and financing calculator',
@@ -323,20 +327,28 @@ function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnair
       action: 'View Rewards',
       onClick: () => onNavigate('incentives'),
     },
+    {
+      icon: MessageSquare,
+      title: 'Community Blogs',
+      description: 'Get in touch with our community and share experiences through blogs and discussions',
+      action: 'Read Blogs',
+      onClick: () => onNavigate('blog'),
+    },
   ];
 
   return (
     <div className="space-y-12">
       {/* Hero Section */}
       <motion.div 
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-600 to-red-700 text-white p-12 md:p-16"
+        className="relative overflow-hidden rounded-3xl text-white p-12 md:p-16"
+        style={{ background: 'linear-gradient(to right, #dc2626, #7b0e0eff)' }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
         <div className="relative z-10 max-w-3xl">
-          <motion.h2 
-            className="text-white mb-4"
+          <motion.h2
+            className="text-white mb-4 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -344,7 +356,7 @@ function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnair
             Find Your Perfect Vehicle
           </motion.h2>
           <motion.p 
-            className="text-xl text-red-50 mb-8"
+            className="mt-6 md:mt-8 text-xl text-red-50 mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
