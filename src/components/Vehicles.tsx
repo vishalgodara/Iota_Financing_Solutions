@@ -124,14 +124,13 @@ export default function Vehicles({ onCalculatePayments }: Props) {
                             >
                                 {vehicle.image_url && (
                                     <div className="card-image-container">
-                                        <img
-                                            src={vehicle.image_url}
-                                            alt={vehicle.model}
-                                            className="card-image"
-                                        />
-                                        <div className="card-badge year-badge">
-                                            {vehicle.year}
-                                        </div>
+                                        <div className="w-full h-48 flex items-center justify-center bg-white rounded-t-lg">
+                                <img
+                                    src={vehicle.image_url}
+                                    alt={vehicle.model}
+                                    className="h-32 w-auto object-contain"
+                                />
+                                </div>
                                     </div>
                                 )}
 
