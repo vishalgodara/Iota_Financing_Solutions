@@ -34,6 +34,9 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
   
   // Insurance state
   const [includeInsurance, setIncludeInsurance] = useState(false);
+  // API-provided insurance (overrides local heuristic when available)
+  const [apiInsuranceMonthly, setApiInsuranceMonthly] = useState<number | null>(null);
+  const [apiInsuranceTotal, setApiInsuranceTotal] = useState<number | null>(null);
   
   // --- NEW STATE for API-driven resale value ---
   const [resaleValue, setResaleValue] = useState(0);
@@ -96,7 +99,8 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
     return 150;
   };
   
-  const monthlyInsurance = getMonthlyInsurance();
+  const defaultMonthlyInsurance = getMonthlyInsurance();
+  const monthlyInsurance = includeInsurance ? (apiInsuranceMonthly ?? defaultMonthlyInsurance) : 0;
 
   // Calculate interest rate based on credit score
   const getInterestRate = (score: number): number => {
@@ -180,12 +184,27 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
             throw new Error('API request failed');
           }
 
-          const data = await response.json(); // Expects { resaleValue: 12345 }
+          const data = await response.json(); // Expects { resaleValue: 12345, insuranceMonthly: 120, insuranceTotal: 7200 }
 
           if (data.resaleValue) {
             setResaleValue(data.resaleValue);
           } else {
             throw new Error('Invalid response format from API');
+          }
+
+          // Set API insurance if provided (optional)
+          if (typeof data.insuranceMonthly === 'number') {
+            setApiInsuranceMonthly(data.insuranceMonthly);
+            // prefer provided total or compute from monthly
+            if (typeof data.insuranceTotal === 'number') {
+              setApiInsuranceTotal(data.insuranceTotal);
+            } else {
+              setApiInsuranceTotal(Math.round(data.insuranceMonthly * yearsOwned * 12));
+            }
+          } else {
+            // clear previous API values if none returned
+            setApiInsuranceMonthly(null);
+            setApiInsuranceTotal(null);
           }
         } catch (error) {
           console.error('Error fetching resale value:', error);

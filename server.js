@@ -34,6 +34,35 @@ function heuristicResaleValue({ year, model, originalPrice, yearsOwned, totalMil
   return Math.round(estimated);
 }
 
+// Simple heuristic for monthly insurance estimate and total over the ownership period
+function heuristicInsuranceEstimate({ year, model, yearsOwned, totalMileage }) {
+  const modelLower = (model || '').toLowerCase();
+  let base = 150; // default monthly
+  if (modelLower.includes('camry')) base = 135;
+  if (modelLower.includes('corolla') && !modelLower.includes('cross')) base = 120;
+  if (modelLower.includes('corolla cross')) base = 145;
+  if (modelLower.includes('prius')) base = 130;
+  if (modelLower.includes('rav4')) base = 165;
+  if (modelLower.includes('highlander')) base = 185;
+  if (modelLower.includes('grand highlander')) base = 195;
+  if (modelLower.includes('4runner')) base = 180;
+  if (modelLower.includes('tacoma')) base = 160;
+  if (modelLower.includes('tundra')) base = 175;
+  if (modelLower.includes('sienna')) base = 150;
+
+  const age = yearsOwned || Math.max(1, new Date().getFullYear() - (year || new Date().getFullYear()));
+  // Slightly higher insurance for older vehicles but reduce after very old
+  const ageFactor = age <= 3 ? 1.0 : age <= 10 ? 1.05 : 0.95;
+
+  // Mileage effect: more miles -> modestly higher insurance
+  const avgAnnual = (totalMileage || (age * 12000)) / Math.max(1, age);
+  const mileageFactor = 1 + Math.max(0, (avgAnnual - 12000) / 30000 * 0.1);
+
+  const monthly = Math.max(25, Math.round(base * ageFactor * mileageFactor));
+  const total = Math.round(monthly * (yearsOwned || age) * 12);
+  return { monthly, total };
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -59,7 +88,9 @@ app.post('/api/predict-resale', async (req, res) => {
       {"resaleValue": <number>}
     `;
 
-    let resaleValue;
+  let resaleValue;
+  let insuranceMonthly = 0;
+  let insuranceTotal = 0;
 
     // If genAI is configured, try calling it. Otherwise, use a local heuristic.
     if (genAI && typeof genAI.getGenerativeModel === 'function') {
@@ -94,13 +125,48 @@ app.post('/api/predict-resale', async (req, res) => {
         console.error('Gemini call failed, falling back to heuristic. Error:', err);
         resaleValue = heuristicResaleValue({ year, model, originalPrice, yearsOwned, totalMileage });
       }
+      // Now attempt to get an insurance estimate from the model using a second prompt
+      try {
+        const insurancePrompt = `
+Predict an appropriate monthly insurance premium (USD) and the total insurance cost over ${yearsOwned} years for the following vehicle. Respond ONLY with JSON in this format:\n{"insuranceMonthly": <number>, "insuranceTotal": <number>}\n\nVehicle:\n- Year: ${year}\n- Model: ${model}\n- Trim: ${trim}\n- Total mileage: ${Math.round(totalMileage)} miles\n- Years owned: ${yearsOwned}
+`;
+        const insResult = await modelApi.generateContent(insurancePrompt);
+        const insText = insResult.response?.text?.() || insResult.text?.() || '';
+        const cleanedInsText = insText
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .replace(/^[^{]+/, '')
+          .replace(/[^}]+$/, '')
+          .trim();
+        let insJson;
+        try {
+          insJson = JSON.parse(cleanedInsText);
+        } catch (err) {
+          console.error('⚠️ JSON parse failed for insurance. Raw Gemini text:', insText);
+          throw new Error('Gemini returned invalid JSON for insurance');
+        }
+        if (insJson && typeof insJson.insuranceMonthly === 'number') {
+          insuranceMonthly = insJson.insuranceMonthly;
+          insuranceTotal = typeof insJson.insuranceTotal === 'number' ? insJson.insuranceTotal : Math.round(insJson.insuranceMonthly * (yearsOwned || 1) * 12);
+        } else {
+          throw new Error('Invalid JSON format from Gemini (insurance)');
+        }
+      } catch (err) {
+        console.error('Gemini insurance call failed, falling back to heuristic. Error:', err);
+        const ins = heuristicInsuranceEstimate({ year, model, yearsOwned, totalMileage });
+        insuranceMonthly = ins.monthly;
+        insuranceTotal = ins.total;
+      }
     } else {
       // SDK not available — use heuristic
       resaleValue = heuristicResaleValue({ year, model, originalPrice, yearsOwned, totalMileage });
+      const ins = heuristicInsuranceEstimate({ year, model, yearsOwned, totalMileage });
+      insuranceMonthly = ins.monthly;
+      insuranceTotal = ins.total;
     }
 
-  console.log('Responding with resaleValue:', resaleValue);
-  res.status(200).json({ resaleValue });
+  console.log('Responding with resaleValue:', resaleValue, 'insuranceMonthly:', insuranceMonthly, 'insuranceTotal:', insuranceTotal);
+  res.status(200).json({ resaleValue, insuranceMonthly, insuranceTotal });
 
   } catch (error) {
     console.error('❌ Error in /api/predict-resale:', error);
