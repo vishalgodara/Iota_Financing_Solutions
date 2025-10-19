@@ -704,19 +704,9 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                   <span className="text-gray-700">Net Cost</span>
                   <span className="text-black font-bold">${netFinanceCost.toLocaleString()}</span>
                 </div>
-                {/* --- UPDATED Resale Value in breakdown --- */}
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Predicted Resale Value</span>
-                  <span className="text-green-600">
-                    {isResaleLoading ? '...' : `-$${resaleValue.toLocaleString()}`}
-                  </span>
-                </div>
+                
                 {/* --- UPDATED Net Cost in breakdown --- */}
                 <div className="flex justify-between text-sm pt-2 border-t border-green-100">
-                  <span className="text-gray-700">Net Cost</span>
-                  <span className="text-green-600">
-                    {isResaleLoading ? '...' : `$${netFinanceCost.toLocaleString()}`}
-                  </span>
                 </div>
               </div>
 
@@ -737,15 +727,11 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               {/* Resale Prediction */}
               <div className="bg-white rounded-lg p-4 border-2 border-black">
               {/* --- UPDATED Resale Prediction card with loading/error states --- */}
-              <div className="bg-white rounded-lg p-4 border-2 border-green-300 min-h-[100px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-black" />
-                  <span className="text-sm text-gray-700">Predicted Resale Value</span>
-                </div>
-                <div className="text-2xl text-black">${resaleValue.toLocaleString()}</div>
-                <div className="text-xs text-gray-600 mt-1">
-                  After {financeTerm / 12} years with {(annualMileage * financeTerm / 12).toLocaleString()} miles
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-black" />
+                <span className="text-sm text-gray-700">Predicted Resale Value</span>
+              </div>
+            
                 
                 {isResaleLoading ? (
                   <div className="text-gray-600 animate-pulse">
@@ -755,14 +741,13 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                   <div className="text-red-600 text-sm">{resaleError}</div>
                 ) : (
                   <>
-                    <div className="text-2xl text-green-600">${resaleValue.toLocaleString()}</div>
+                    <div className="text-2xl text-black">${resaleValue.toLocaleString()}</div>
                     <div className="text-xs text-gray-600 mt-1">
                       After {financeTerm / 12} years with {(annualMileage * financeTerm / 12).toLocaleString()} miles
                     </div>
                   </>
                 )}
               </div>
-            </div>
           </Card>
         </motion.div>
       </div>
