@@ -107,19 +107,33 @@ Keep responses conversational and under 150 words unless more detail is specific
 
     // Try to use Gemini if available
     if (genAI && typeof genAI.GoogleGenerativeAI === 'function') {
+      const googleAI = new genAI.GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+      
       try {
-        const googleAI = new genAI.GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-        const model = googleAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Updated model name
+        // Use Gemini 2.5 Flash-Lite - fastest and most cost-efficient
+        const model = googleAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
         
         const result = await model.generateContent(fullPrompt);
         const response = await result.response;
         responseText = response.text();
         
-        console.log('🤖 Gemini response:', responseText);
+        console.log('🤖 Gemini 2.5 Flash-Lite response:', responseText);
       } catch (err) {
-        console.error('Gemini API call failed:', err);
-        // Fallback to heuristic response
-        responseText = generateFallbackResponse(message);
+        console.error('❌ Gemini 2.5 Flash-Lite failed:', err.message);
+        console.error('Trying gemini-pro...');
+        
+        // Try with gemini-pro as fallback
+        try {
+          const model2 = googleAI.getGenerativeModel({ model: 'gemini-pro' });
+          const result2 = await model2.generateContent(fullPrompt);
+          const response2 = await result2.response;
+          responseText = response2.text();
+          console.log('🤖 Gemini Pro response:', responseText);
+        } catch (err2) {
+          console.error('❌ Gemini Pro also failed:', err2.message);
+          console.error('Using fallback response');
+          responseText = generateFallbackResponse(message);
+        }
       }
     } else {
       // No Gemini available - use fallback
