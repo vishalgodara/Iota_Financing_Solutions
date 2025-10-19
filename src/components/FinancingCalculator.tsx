@@ -35,6 +35,11 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
   // Insurance state
   const [includeInsurance, setIncludeInsurance] = useState(false);
   
+  // --- NEW STATE for API-driven resale value ---
+  const [resaleValue, setResaleValue] = useState(0);
+  const [isResaleLoading, setIsResaleLoading] = useState(false);
+  const [resaleError, setResaleError] = useState<string | null>(null);
+  
   // Define accessories
   const colors = [
     { id: 'pearl-white', name: 'Pearl White', price: 0 },
@@ -137,25 +142,72 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
     return Math.round(payment + monthlyInsurance);
   };
 
-  // Calculate total costs
+  // --- REMOVED old predictResaleValue function ---
+
+  // --- ADDED useEffect to call the resale prediction API ---
+  useEffect(() => {
+    if (!selectedVehicle) {
+      setResaleValue(0);
+      return;
+    }
+
+    // Debounce function to avoid spamming the API on every slider move
+    const debounceFetch = setTimeout(() => {
+      const fetchResaleValue = async () => {
+        setIsResaleLoading(true);
+        setResaleError(null);
+
+        const yearsOwned = financeTerm / 12;
+        const totalMileage = annualMileage * yearsOwned;
+
+        try {
+          const response = await fetch('http://localhost:3001/api/predict-resale', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              year: selectedVehicle.year,
+              model: selectedVehicle.model,
+              trim: selectedVehicle.trim,
+              originalPrice: totalVehiclePrice,
+              yearsOwned: yearsOwned,
+              totalMileage: totalMileage,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('API request failed');
+          }
+
+          const data = await response.json(); // Expects { resaleValue: 12345 }
+
+          if (data.resaleValue) {
+            setResaleValue(data.resaleValue);
+          } else {
+            throw new Error('Invalid response format from API');
+          }
+        } catch (error) {
+          console.error('Error fetching resale value:', error);
+          setResaleError('Could not predict value.');
+          setResaleValue(0); // Reset on error
+        } finally {
+          setIsResaleLoading(false);
+        }
+      };
+
+      fetchResaleValue();
+    }, 500); // 500ms debounce
+
+    // Clear the timeout if dependencies change
+    return () => clearTimeout(debounceFetch);
+
+  }, [selectedVehicle, totalVehiclePrice, financeTerm, annualMileage]); // Re-fetch when these change
+
+
+  // Calculate total costs (now uses resaleValue state)
   const leaseTotalCost = calculateLease() * leaseTerm + downPayment;
   const financeTotalCost = calculateFinance() * financeTerm + downPayment;
-
-  // Predict resale value
-  const predictResaleValue = () => {
-    const yearsOwned = financeTerm / 12;
-    const mileage = annualMileage * yearsOwned;
-    let depreciationRate = 0.15; // Base 15% per year
-
-    // Adjust for mileage
-    if (mileage > 75000) depreciationRate += 0.05;
-    if (mileage < 30000) depreciationRate -= 0.03;
-
-    const resalePercent = Math.max(0.35, 1 - depreciationRate * yearsOwned);
-    return Math.round(totalVehiclePrice * resalePercent);
-  };
-
-  const resaleValue = predictResaleValue();
   const netFinanceCost = financeTotalCost - resaleValue;
 
   return (
@@ -588,7 +640,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                 <div className="text-3xl text-black">${calculateFinance()}</div>
                 <div className="text-xs text-gray-600 mt-1">{financeTerm}-month term</div>
               </div>
-
+            </div>
               {/* Term Selector */}
               <div>
                 <Label className="text-sm text-gray-800 mb-2 block">Finance Term</Label>
@@ -633,6 +685,20 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                   <span className="text-gray-700">Net Cost</span>
                   <span className="text-black font-bold">${netFinanceCost.toLocaleString()}</span>
                 </div>
+                {/* --- UPDATED Resale Value in breakdown --- */}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Predicted Resale Value</span>
+                  <span className="text-green-600">
+                    {isResaleLoading ? '...' : `-$${resaleValue.toLocaleString()}`}
+                  </span>
+                </div>
+                {/* --- UPDATED Net Cost in breakdown --- */}
+                <div className="flex justify-between text-sm pt-2 border-t border-green-100">
+                  <span className="text-gray-700">Net Cost</span>
+                  <span className="text-green-600">
+                    {isResaleLoading ? '...' : `$${netFinanceCost.toLocaleString()}`}
+                  </span>
+                </div>
               </div>
 
               {/* Pros */}
@@ -651,6 +717,8 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
 
               {/* Resale Prediction */}
               <div className="bg-white rounded-lg p-4 border-2 border-black">
+              {/* --- UPDATED Resale Prediction card with loading/error states --- */}
+              <div className="bg-white rounded-lg p-4 border-2 border-green-300 min-h-[100px]">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-black" />
                   <span className="text-sm text-gray-700">Predicted Resale Value</span>
@@ -659,6 +727,21 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                 <div className="text-xs text-gray-600 mt-1">
                   After {financeTerm / 12} years with {(annualMileage * financeTerm / 12).toLocaleString()} miles
                 </div>
+                
+                {isResaleLoading ? (
+                  <div className="text-gray-600 animate-pulse">
+                    Asking Gemini for prediction...
+                  </div>
+                ) : resaleError ? (
+                  <div className="text-red-600 text-sm">{resaleError}</div>
+                ) : (
+                  <>
+                    <div className="text-2xl text-green-600">${resaleValue.toLocaleString()}</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      After {financeTerm / 12} years with {(annualMileage * financeTerm / 12).toLocaleString()} miles
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </Card>
@@ -678,7 +761,16 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
             </div>
             <div className="flex-1">
               <h3 className="text-gray-900 mb-2">Our Recommendation</h3>
-              {netFinanceCost < leaseTotalCost ? (
+              {/* --- UPDATED Recommendation to handle loading state --- */}
+              {isResaleLoading ? (
+                <p className="text-gray-700 animate-pulse">
+                  Calculating recommendation...
+                </p>
+              ) : resaleError ? (
+                <p className="text-red-700">
+                  Could not generate a recommendation because the resale value prediction failed.
+                </p>
+              ) : netFinanceCost < leaseTotalCost ? (
                 <div>
                   <p className="text-gray-700 mb-3">
                     <strong>Financing is the better value</strong> for your situation. You'll save approximately{' '}
@@ -695,7 +787,7 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
                 <div>
                   <p className="text-gray-700 mb-3">
                     <strong>Leasing may be better</strong> for you. With total lower payments of{' '}
-                    <strong className="text-blue-600">${calculateLease() * leaseTerm.toLocaleString() + downPayment}</strong>, you'll have more financial flexibility
+                    <strong className="text-blue-600">${calculateLease() * leaseTerm + downPayment}</strong>, you'll have more financial flexibility
                     and can drive a new vehicle every few years.
                   </p>
                   <div className="flex gap-2 text-sm text-gray-600">
