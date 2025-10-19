@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Car, Calculator, GraduationCap, Gift, Calendar, Home, ChevronRight, Sparkles } from 'lucide-react';
+import { Car, GraduationCap, Gift, Calendar, Home, ChevronRight, Sparkles, MessageSquare, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import QuestionnaireFlow from './QuestionnaireFlow';
 import VehicleRecommendations from './VehicleRecommendations';
-import FinancingCalculator from './FinancingCalculator';
-import VirtualShowroom from './VirtualShowroom';
+import Vehicles from './Vehicles';
 import EducationalHub from './EducationalHub';
 import LeaseEndAssistance from './LeaseEndAssistance';
 import IncentivesProgram from './IncentivesProgram';
 import AppointmentScheduler from './AppointmentScheduler';
 import BlogSection from './BlogSection';
+import Discussion from './Discussion';
+import FinancingCalculator from './FinancingCalculator';
+import iotaLogo from '../assets/logo.jpeg';
 
 export type UserProfile = {
   lifestyle: {
@@ -31,10 +34,21 @@ export type UserProfile = {
   completed: boolean;
 };
 
-type Section = 'home' | 'questionnaire' | 'recommendations' | 'calculator' | 'showroom' | 'education' | 'lease-end' | 'incentives' | 'appointment' | 'blog';
+type Section = 'home' | 'questionnaire' | 'recommendations' | 'calculator' | 'showroom' | 'education' | 'lease-end' | 'incentives' | 'appointment' | 'blog' | 'discussion';
 
-export default function Dashboard() {
+export type SelectedVehicle = {
+  model: string;
+  trim: string;
+  year: number;
+  msrp: number;
+  mpg_city: number;
+  mpg_highway: number;
+};
+
+export default function App() {
+  const { user, signOut } = useAuth();
   const [currentSection, setCurrentSection] = useState<Section>('home');
+  const [selectedVehicle, setSelectedVehicle] = useState<SelectedVehicle | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     lifestyle: {
       dailyCommute: 0,
@@ -54,17 +68,27 @@ export default function Dashboard() {
     completed: false,
   });
 
+  // Scroll to top whenever section changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentSection]);
+
   const handleQuestionnaireComplete = (profile: UserProfile) => {
     setUserProfile(profile);
     setCurrentSection('recommendations');
   };
 
+  const handleCalculatePayments = (vehicle: SelectedVehicle) => {
+    setSelectedVehicle(vehicle);
+    setCurrentSection('calculator');
+  };
+
   const navigation = [
     { id: 'home' as Section, label: 'Home', icon: Home },
     { id: 'questionnaire' as Section, label: 'Find Your Match', icon: Sparkles },
-    { id: 'calculator' as Section, label: 'Calculator', icon: Calculator },
-    { id: 'showroom' as Section, label: 'Virtual Showroom', icon: Car },
+    { id: 'showroom' as Section, label: 'Vehicles', icon: Car },
     { id: 'education' as Section, label: 'Learn', icon: GraduationCap },
+    { id: 'discussion' as Section, label: 'Community', icon: MessageSquare },
     { id: 'incentives' as Section, label: 'Rewards', icon: Gift },
     { id: 'appointment' as Section, label: 'Book Appointment', icon: Calendar },
   ];
@@ -80,11 +104,13 @@ export default function Dashboard() {
               onClick={() => setCurrentSection('home')}
               whileHover={{ scale: 1.02 }}
             >
-              <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                <Car className="w-6 h-6 text-white" />
-              </div>
+              <img 
+                src={iotaLogo} 
+                alt="Iota Financial Solutions" 
+                className="h-10 w-auto rounded-lg"
+              />
               <div>
-                <h1 className="text-red-600">Toyota Financial Solutions</h1>
+                <h1 className="text-red-600">Iota Financial Solutions</h1>
                 <p className="text-xs text-gray-500">Your Journey, Simplified</p>
               </div>
             </motion.div>
@@ -103,13 +129,20 @@ export default function Dashboard() {
               ))}
             </nav>
 
-            <Button 
-              className="md:hidden"
-              variant="outline"
-              onClick={() => setCurrentSection(currentSection === 'home' ? 'questionnaire' : 'home')}
-            >
-              Menu
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:block text-sm text-gray-600">
+                {user?.user_metadata?.name || user?.email}
+              </div>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden md:inline">Sign Out</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -125,7 +158,10 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <HomeSection onStartQuestionnaire={() => setCurrentSection('questionnaire')} />
+              <HomeSection 
+                onStartQuestionnaire={() => setCurrentSection('questionnaire')} 
+                onNavigate={setCurrentSection}
+              />
             </motion.div>
           )}
 
@@ -164,7 +200,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <FinancingCalculator userProfile={userProfile} />
+              <FinancingCalculator userProfile={userProfile} selectedVehicle={selectedVehicle} />
             </motion.div>
           )}
 
@@ -176,7 +212,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <VirtualShowroom onScheduleVisit={() => setCurrentSection('appointment')} />
+              <Vehicles onCalculatePayments={handleCalculatePayments} />
             </motion.div>
           )}
 
@@ -201,6 +237,18 @@ export default function Dashboard() {
               transition={{ duration: 0.3 }}
             >
               <LeaseEndAssistance />
+            </motion.div>
+          )}
+
+          {currentSection === 'discussion' && (
+            <motion.div
+              key="discussion"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Discussion />
             </motion.div>
           )}
 
@@ -245,7 +293,7 @@ export default function Dashboard() {
   );
 }
 
-function HomeSection({ onStartQuestionnaire }: { onStartQuestionnaire: () => void }) {
+function HomeSection({ onStartQuestionnaire, onNavigate }: { onStartQuestionnaire: () => void; onNavigate: (section: Section) => void }) {
   const features = [
     {
       icon: Sparkles,
@@ -255,25 +303,25 @@ function HomeSection({ onStartQuestionnaire }: { onStartQuestionnaire: () => voi
       onClick: onStartQuestionnaire,
     },
     {
-      icon: Calculator,
-      title: 'Smart Calculator',
-      description: 'Compare financing vs leasing options with real-time predictions on resale value',
-      action: 'Calculate Now',
-      onClick: onStartQuestionnaire,
+      icon: Car,
+      title: 'Browse Vehicles',
+      description: 'Explore our complete lineup with pricing and financing calculator',
+      action: 'View Vehicles',
+      onClick: () => onNavigate('showroom'),
     },
     {
-      icon: Car,
-      title: 'Virtual Showroom',
-      description: 'Explore vehicles in 3D from the comfort of your home',
-      action: 'Visit Showroom',
-      onClick: onStartQuestionnaire,
+      icon: GraduationCap,
+      title: 'Learn & Educate',
+      description: 'Understand financing terms, leasing benefits, and make informed decisions',
+      action: 'Start Learning',
+      onClick: () => onNavigate('education'),
     },
     {
       icon: Gift,
       title: 'Rewards Program',
       description: 'Earn gas rewards, rental car discounts, and exclusive partner benefits',
       action: 'View Rewards',
-      onClick: onStartQuestionnaire,
+      onClick: () => onNavigate('incentives'),
     },
   ];
 
@@ -293,7 +341,7 @@ function HomeSection({ onStartQuestionnaire }: { onStartQuestionnaire: () => voi
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            Find Your Perfect Toyota
+            Find Your Perfect Vehicle
           </motion.h2>
           <motion.p 
             className="text-xl text-red-50 mb-8"
@@ -324,6 +372,16 @@ function HomeSection({ onStartQuestionnaire }: { onStartQuestionnaire: () => voi
         </div>
       </motion.div>
 
+      {/* Our Services Section */}
+      <motion.div
+        className="text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <h3 className="text-gray-900 inline-block border-b-2 border-red-600 pb-2">Our Services</h3>
+      </motion.div>
+
       {/* Features Grid */}
       <div className="grid md:grid-cols-2 gap-6">
         {features.map((feature, index) => (
@@ -350,21 +408,26 @@ function HomeSection({ onStartQuestionnaire }: { onStartQuestionnaire: () => voi
       </div>
 
       {/* Value Propositions */}
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
-        <h3 className="text-gray-900 mb-6">Why Choose Toyota Financial Solutions?</h3>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div>
-            <div className="text-red-600 mb-2">Transparent Pricing</div>
-            <p className="text-sm text-gray-600">Clear, upfront costs with no hidden fees. See your total cost of ownership before you commit.</p>
-          </div>
-          <div>
-            <div className="text-red-600 mb-2">Flexible Options</div>
-            <p className="text-sm text-gray-600">Customized lease and finance packages based on your mileage, usage, and upgrade preferences.</p>
-          </div>
-          <div>
-            <div className="text-red-600 mb-2">Digital-First</div>
-            <p className="text-sm text-gray-600">Complete paperwork online, schedule visits, and manage your account from anywhere.</p>
-          </div>
+      <motion.div
+        className="text-center mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <h3 className="text-gray-900 inline-block border-b-2 border-red-600 pb-2">Why Choose Iota Financial Solutions?</h3>
+      </motion.div>
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+          <div className="text-red-600 mb-2">Transparent Pricing</div>
+          <p className="text-sm text-gray-600">Clear, upfront costs with no hidden fees. See your total cost of ownership before you commit.</p>
+        </div>
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+          <div className="text-red-600 mb-2">Flexible Options</div>
+          <p className="text-sm text-gray-600">Customized lease and finance packages based on your mileage, usage, and upgrade preferences.</p>
+        </div>
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+          <div className="text-red-600 mb-2">Digital-First</div>
+          <p className="text-sm text-gray-600">Complete paperwork online, schedule visits, and manage your account from anywhere.</p>
         </div>
       </div>
     </div>
