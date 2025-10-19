@@ -136,7 +136,7 @@ export default function IncentivesProgram() {
         <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Gift className="w-8 h-8 text-red-600" />
         </div>
-        <h2 className="text-gray-900 mb-2">Iota Rewards Program</h2>
+        <h2 className="text-gray-900 text-2xl mb-2">Iota Rewards Program</h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
           Earn points on payments, services, and referrals. Redeem for gas discounts, rental cars, and more.
         </p>
@@ -144,11 +144,13 @@ export default function IncentivesProgram() {
 
       {/* Points Dashboard */}
       <div className="grid md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 p-8 bg-gradient-to-br from-red-600 to-red-700 text-white">
+        <Card className="md:col-span-2 p-8 text-white"
+          style={{ background: 'linear-gradient(to right, #dc2626, #7b0e0eff)' }}
+        >
           <div className="flex items-start justify-between mb-6">
             <div>
               <div className="text-red-100 mb-1">Your Points Balance</div>
-              <div className="text-5xl">{points.toLocaleString()}</div>
+              <div className="text-5xl text-white font-bold">{points.toLocaleString()}</div>
               <div className="text-red-100 mt-2">points available</div>
             </div>
             <Badge className={`${currentTier.color} text-white text-lg px-4 py-2`}>
@@ -159,12 +161,12 @@ export default function IncentivesProgram() {
           {nextTier && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-red-100">Progress to {nextTier.name}</span>
-                <span className="text-sm text-red-100">
+                <span className="text-sm text-white">Progress to {nextTier.name}</span>
+                <span className="text-sm text-white">
                   {nextTier.min - points} points to go
                 </span>
               </div>
-              <Progress value={tierProgress} className="h-2 bg-red-800" />
+              <Progress value={tierProgress} className="h-2 bg-white" />
             </div>
           )}
         </Card>
