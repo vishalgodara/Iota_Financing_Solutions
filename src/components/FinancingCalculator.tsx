@@ -694,8 +694,8 @@ export default function FinancingCalculator({ userProfile, selectedVehicle }: Pr
               ) : (
                 <div>
                   <p className="text-gray-700 mb-3">
-                    <strong>Leasing may be better</strong> for you. With lower monthly payments of{' '}
-                    <strong className="text-blue-600">${calculateLease()}</strong>, you'll have more financial flexibility
+                    <strong>Leasing may be better</strong> for you. With total lower payments of{' '}
+                    <strong className="text-blue-600">${calculateLease() * leaseTerm.toLocaleString() + downPayment}</strong>, you'll have more financial flexibility
                     and can drive a new vehicle every few years.
                   </p>
                   <div className="flex gap-2 text-sm text-gray-600">
