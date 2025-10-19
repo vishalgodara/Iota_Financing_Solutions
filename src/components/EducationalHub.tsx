@@ -157,7 +157,7 @@ export default function EducationalHub() {
         <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <GraduationCap className="w-8 h-8 text-red-600" />
         </div>
-        <h2 className="text-gray-900 mb-2">Educational Hub</h2>
+        <h2 className="text-gray-900 text-3xl mb-2">Educational Hub</h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
           Learn the basics of auto financing and leasing. We break down complex terms into simple explanations.
         </p>

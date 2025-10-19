@@ -66,7 +66,7 @@ export default function AppointmentScheduler() {
         <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <CalendarIcon className="w-8 h-8 text-red-600" />
         </div>
-        <h2 className="text-gray-900 mb-2">Schedule Your Appointment</h2>
+        <h2 className="text-gray-900 text-2xl mb-2">Schedule Your Appointment</h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
           Book a time that works for you. We'll pre-fill your paperwork and have everything ready when you arrive.
         </p>
